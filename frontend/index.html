@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Hub Services - Çevre & Şehircilik Analizi</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1><i class="fas fa-brain"></i> AI Hub Services</h1>
+            <p>Çevre, Şehircilik ve İklim Değişikliği Bakanlığı için AI Destekli Görsel Analiz</p>
+        </header>
+
+        <!-- Service Selection -->
+        <div class="service-selector">
+            <button class="service-btn active" data-service="detect">
+                <i class="fas fa-search"></i>
+                Nesne Tespiti (LLaVA-34B)
+            </button>
+            <button class="service-btn" data-service="vqa">
+                <i class="fas fa-question-circle"></i>
+                Görsel Soru-Cevap
+            </button>
+            <button class="service-btn" data-service="imggen">
+                <i class="fas fa-paint-brush"></i>
+                Görsel Üretimi
+            </button>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <h3>Fotoğraf Yükle</h3>
+                <p>Analiz için bir fotoğraf seçin veya sürükleyin</p>
+                <input type="file" id="fileInput" accept="image/*" hidden>
+                <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                    Fotoğraf Seç
+                </button>
+            </div>
+            
+            <div class="image-preview" id="imagePreview" style="display: none;">
+                <img id="previewImg" src="" alt="Preview">
+                <button class="remove-btn" onclick="removeImage()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Analysis Section -->
+        <div class="analysis-section" id="analysisSection" style="display: none;">
+            <div class="analysis-header">
+                <h3><i class="fas fa-cogs"></i> Analiz Ediliyor...</h3>
+                <div class="loading-spinner"></div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection" style="display: none;">
+            <h3><i class="fas fa-chart-bar"></i> Analiz Sonuçları</h3>
+            
+            <!-- Detect Results -->
+            <div class="detect-results" id="detectResults" style="display: none;">
+                <div class="summary-cards">
+                    <div class="summary-card">
+                        <i class="fas fa-object-group"></i>
+                        <h4>Toplam Nesne</h4>
+                        <span id="totalObjects">0</span>
+                    </div>
+                    <div class="summary-card">
+                        <i class="fas fa-brain"></i>
+                        <h4>Model</h4>
+                        <span id="modelName">LLaVA-34B</span>
+                    </div>
+                    <div class="summary-card">
+                        <i class="fas fa-clock"></i>
+                        <h4>Analiz Süresi</h4>
+                        <span id="analysisTime">0s</span>
+                    </div>
+                </div>
+                
+                <div class="detections-list" id="detectionsList">
+                    <!-- Detections will be populated here -->
+                </div>
+            </div>
+
+            <!-- VQA Results -->
+            <div class="vqa-results" id="vqaResults" style="display: none;">
+                <div class="question-input">
+                    <input type="text" id="questionInput" placeholder="Görsel hakkında soru sorun...">
+                    <button onclick="askQuestion()">Soru Sor</button>
+                </div>
+                <div class="answer" id="answerText"></div>
+            </div>
+
+            <!-- Image Generation Results -->
+            <div class="imggen-results" id="imggenResults" style="display: none;">
+                <div class="prompt-input">
+                    <input type="text" id="promptInput" placeholder="Görsel açıklaması yazın...">
+                    <button onclick="generateImage()">Görsel Üret</button>
+                </div>
+                <div class="generated-image" id="generatedImage"></div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2024 AI Hub Services - Çevre & Şehircilik Bakanlığı</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

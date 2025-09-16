@@ -1,0 +1,59 @@
+
+services:
+  # Görsel üretim servisi (SDXL-Turbo)
+  imggen:
+    build: ./services/imggen
+    ports:
+      - "8001:8000"
+    environment:
+      - MODEL_ID=stabilityai/sdxl-turbo
+      - DEVICE=cuda
+    volumes:
+      - ./outputs:/app/outputs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Görselden soru-cevap servisi (LLaVA-34B)
+  # NOT: Ollama host'ta çalıştığı için host network kullan
+  vqa:
+    build: ./services/vqa
+    network_mode: "host"
+    environment:
+      - OLLAMA_BASE_URL=http://127.0.0.1:11434
+      - MODEL_NAME=llava:34b
+    volumes:
+      - ./uploads:/app/uploads
+
+  # Nesne tespiti servisi (Gemma3-27B)
+  # NOT: Gemma3 Ollama üzerinden çalışır, GPU'ya gerek yok
+  detect:
+    build: ./services/detect
+    network_mode: "host"
+    environment:
+      - OLLAMA_BASE_URL=http://127.0.0.1:11434
+      - MODEL_NAME=gemma3:27b
+      - CONFIDENCE_THRESHOLD=0.5
+    volumes:
+      - ./uploads:/app/uploads
+      - ./outputs:/app/outputs
+
+# Nginx geçici olarak kapatıldı
+  # nginx:
+  #   image: nginx:alpine
+  #   ports:
+  #     - "8090:80"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #   depends_on:
+  #     - imggen
+  #     - vqa
+  #     - detect
+
+networks:
+  default:
+    name: ai-hub-network
