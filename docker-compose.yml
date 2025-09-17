@@ -2,14 +2,14 @@
 services:
   # Görsel üretim servisi (SDXL-Turbo)
   imggen:
-    build: ./services/imggen
+    build: ./services/image/imggen
     ports:
       - "8001:8000"
     environment:
       - MODEL_ID=stabilityai/sdxl-turbo
       - DEVICE=cuda
     volumes:
-      - ./outputs:/app/outputs
+      - ./data/outputs/images:/app/outputs
     deploy:
       resources:
         reservations:
@@ -21,26 +21,26 @@ services:
   # Görselden soru-cevap servisi (LLaVA-34B)
   # NOT: Ollama host'ta çalıştığı için host network kullan
   vqa:
-    build: ./services/vqa
+    build: ./services/image/vqa
     network_mode: "host"
     environment:
       - OLLAMA_BASE_URL=http://127.0.0.1:11434
       - MODEL_NAME=llava:34b
     volumes:
-      - ./uploads:/app/uploads
+      - ./data/uploads/images:/app/uploads
 
   # Nesne tespiti servisi (Gemma3-27B)
   # NOT: Gemma3 Ollama üzerinden çalışır, GPU'ya gerek yok
   detect:
-    build: ./services/detect
+    build: ./services/image/detect
     network_mode: "host"
     environment:
       - OLLAMA_BASE_URL=http://127.0.0.1:11434
       - MODEL_NAME=gemma3:27b
       - CONFIDENCE_THRESHOLD=0.5
     volumes:
-      - ./uploads:/app/uploads
-      - ./outputs:/app/outputs
+      - ./data/uploads/images:/app/uploads
+      - ./data/outputs/images:/app/outputs
 
 # Nginx geçici olarak kapatıldı
   # nginx:

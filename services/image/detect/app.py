@@ -93,11 +93,6 @@ def detect_objects():
             # JSON parse hatası durumunda manuel parse et
             objects = parse_llava_response(llava_response)
         
-        # Görseli kaydet
-        filename = f"{uuid.uuid4()}_detected.png"
-        output_path = os.path.join("/app/outputs", filename)
-        image.save(output_path)
-        
         # Nesne isimlerini Türkçe'ye çevir
         turkish_objects = []
         for obj in objects:
@@ -109,8 +104,7 @@ def detect_objects():
             "status": "success",
             "model": MODEL_NAME,
             "total_objects": len(turkish_objects),
-            "objects": turkish_objects,
-            "image_saved": filename
+            "objects": turkish_objects
         })
         
     except Exception as e:

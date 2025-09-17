@@ -79,11 +79,20 @@ docker-compose up --build -d
 ```
 ai_hub/
 ├── services/
-│   ├── imggen/          # Görsel üretim servisi (GPU gerekli)
-│   ├── detect/          # Nesne tespiti servisi (Ollama üzerinden)
-│   └── vqa/             # VQA servisi (Ollama üzerinden)
-├── uploads/             # Yüklenen dosyalar
-├── outputs/             # Üretilen çıktılar
+│   ├── image/           # Görsel işleme servisleri
+│   │   ├── imggen/      # Görsel üretim servisi (GPU gerekli)
+│   │   ├── detect/      # Nesne tespiti servisi (Ollama üzerinden)
+│   │   └── vqa/         # VQA servisi (Ollama üzerinden)
+│   └── text/            # Metin işleme servisleri (gelecekte eklenecek)
+├── data/                # Merkezi veri yönetimi
+│   ├── uploads/         # Yüklenen dosyalar
+│   │   ├── images/      # Görsel dosyalar
+│   │   └── documents/   # Metin dosyaları
+│   └── outputs/         # Üretilen çıktılar
+│       ├── images/      # Üretilen görseller
+│       ├── summaries/   # Özetler
+│       └── translations/# Çeviriler
+├── frontend/            # Web arayüzü
 ├── docker-compose.yml   # Servis konfigürasyonu
 └── README.md            
 ```
@@ -100,15 +109,38 @@ curl -X POST http://localhost:8001/generate \
 ### Nesne Tespiti (detect)
 ```bash
 curl -X POST http://localhost:8003/detect \
-  -F "image=@uploads/deneme2.jpg" \
+  -F "image=@data/uploads/images/deneme2.jpg" \
   -F "confidence=0.3" \
   -F "max_objects=15"
+```
+
+**Çıktı örneği:**
+```json
+{
+  "status": "success",
+  "model": "gemma3:27b",
+  "total_objects": 10,
+  "objects": [
+    {
+      "name": "araba",
+      "confidence": 95,
+      "location": "Center",
+      "description": "A silver SUV with the trunk open, parked on a grassy hill."
+    },
+    {
+      "name": "erkek",
+      "confidence": 90,
+      "location": "Left-Center",
+      "description": "A man oturuyor at the edge of the open car trunk, giyiyor a jacket and boots."
+    }
+  ]
+}
 ```
 
 ### Görselden Soru-Cevap (vqa)
 ```bash
 curl -X POST http://localhost:8002/vqa \
-  -F "image=@uploads/deneme2.jpg" \
+  -F "image=@data/uploads/images/deneme2.jpg" \
   -F "question=What do you see in this image?"
 ```
 
@@ -123,7 +155,7 @@ graph TB
     B --> E[VQA Servisi<br/>Port 8002]
     
     C --> F[SDXL-Turbo Model<br/>CUDA GPU]
-    F --> G[Görsel Üretimi<br/>outputs/ klasörü]
+    F --> G[Görsel Üretimi<br/>data/outputs/images/]
     
     D --> H[Ollama API<br/>127.0.0.1:11434]
     E --> H
@@ -131,8 +163,8 @@ graph TB
     H --> I[Gemma3:27b Model<br/>Nesne Tespiti]
     H --> J[LLaVA:34b Model<br/>Görsel Soru-Cevap]
     
-    I --> K[Türkçe Nesne Listesi<br/>JSON Response]
-    J --> L[Görsel Analiz Cevabı<br/>JSON Response]
+    I --> K[Türkçe Nesne Analizi<br/>JSON Response Only]
+    J --> L[Görsel Soru-Cevap<br/>JSON Response Only]
     
     G --> M[Kullanıcıya Dönen Sonuç]
     K --> M
@@ -143,6 +175,8 @@ graph TB
     style E fill:#e8f5e8
     style F fill:#fff3e0
     style H fill:#fce4ec
+    style K fill:#f8f9fa
+    style L fill:#f8f9fa
 ```
 
 ## 🐛 Sorun Giderme
@@ -192,15 +226,17 @@ curl http://localhost:8003/health  # Detect
 - **Modüler Yapı**: Her servis bağımsız olarak çalışabilir
 - **Docker Tabanlı**: Kolay kurulum ve dağıtım
 - **RESTful API**: Standart HTTP API'ler
-- **Dosya Yönetimi**: Otomatik upload/output yönetimi
+- **Merkezi Dosya Yönetimi**: Tüm dosyalar `data/` klasöründe organize edilir
+- **Temiz Çıktılar**: Detect servisi sadece analiz yapar, gereksiz dosya kaydetmez
 
 ## 🔧 Geliştirme
 
 ### Yeni Servis Ekleme
-1. `services/` altında yeni klasör oluştur
+1. `services/image/` veya `services/text/` altında yeni klasör oluştur
 2. `Dockerfile` ve `app.py` ekle
 3. `docker-compose.yml`'e servis ekle
 4. Gerekli portları ayarla
+5. `data/uploads/` ve `data/outputs/` altında gerekli klasörleri oluştur
 
 ### Log Kontrolü
 ```bash
@@ -215,9 +251,9 @@ docker-compose logs -f vqa
 
 ## 📊 Performans
 
-- **ImageGen**: ~2-5 saniye (GPU'ya bağlı)
-- **Detect**: ~3-8 saniye (Ollama'ya bağlı)
-- **VQA**: ~5-15 saniye (Ollama'ya bağlı)
+- **ImageGen**: ~2-5 saniye (GPU'ya bağlı) - Görsel üretir ve kaydeder
+- **Detect**: ~3-8 saniye (Ollama'ya bağlı) - Sadece analiz yapar, dosya kaydetmez
+- **VQA**: ~5-15 saniye (Ollama'ya bağlı) - Sadece metin cevabı döner
 
 ## 🤝 Katkıda Bulunma
 
@@ -225,6 +261,17 @@ docker-compose logs -f vqa
 2. Feature branch oluştur
 3. Değişikliklerini commit et
 4. Pull request gönder
+
+## 🚀 Gelecek Planları
+
+### Text Servisleri (Yakında)
+- **Summarizer**: Metin özetleme servisi
+- **Translator**: Çok dilli çeviri servisi  
+- **Sentiment**: Duygu analizi servisi
+- **NER**: Adlandırılmış varlık tanıma servisi
+
+### Sistem Akış Diyagramı (Text Servisleri)
+Text servisleri eklendikten sonra ayrı bir diyagram oluşturulacak.
 
 ## 📄 Lisans
 

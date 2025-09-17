@@ -6,16 +6,16 @@ let analysisStartTime = null;
 // Service configuration
 const services = {
     detect: {
-        url: 'http://localhost:8000/detect',  // Host network port
-        name: 'Nesne Tespiti (LLaVA-34B)'
+        url: 'http://localhost:8003/detect',  // Detect port (updated)
+        name: 'Nesne Tespiti (Gemma3-27B)'
     },
     vqa: {
         url: 'http://localhost:8002/vqa',    // VQA port
-        name: 'Görsel Soru-Cevap'
+        name: 'Görsel Soru-Cevap (LLaVA-34B)'
     },
     imggen: {
         url: 'http://localhost:8001/generate', // Image generation port
-        name: 'Görsel Üretimi'
+        name: 'Görsel Üretimi (SDXL-Turbo)'
     }
 };
 
