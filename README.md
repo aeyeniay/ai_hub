@@ -1,42 +1,55 @@
 # AI Hub Services
 
-Bu proje, görsel üretim, görselden soru-cevap ve nesne tespiti servislerini içeren bir AI hub'ıdır.
+Bu proje, görsel üretim, nesne tespiti ve görselden soru-cevap servislerini içeren bir AI hub'ıdır.
 
 ## 🚀 Servisler
 
-- **imggen** (Port 8001): SDXL-Turbo ile görsel üretim
-- **vqa** (Port 8002): Ollama VLM ile görselden soru-cevap  
-- **detect** (Port 8000): **LLaVA-34B ile nesne tespiti** 🆕
-- **nginx** (Port 80): Reverse proxy
+- **imggen** (Port 8001): SDXL-Turbo ile görsel üretim (GPU hızlandırmalı)
+- **detect** (Port 8003): Gemma3:27b ile nesne tespiti (Ollama üzerinden)
+- **vqa** (Port 8002): LLaVA:34b ile görselden soru-cevap (Ollama üzerinden)
+
+## 🖥️ Sistem Gereksinimleri
+
+### Donanım
+- **GPU**: NVIDIA GPU (CUDA 12.1+ destekli) - ImageGen servisi için
+- **RAM**: En az 16GB (Ollama modelleri için)
+- **Disk**: En az 50GB boş alan (modeller için)
+
+### Yazılım
+- **Docker**: 20.10+
+- **Docker Compose**: 2.0+
+- **NVIDIA Container Toolkit**: GPU desteği için
+- **Ollama**: 0.1.0+ (host sistemde)
+- **CUDA**: 12.1+ (GPU için)
 
 ## ⚠️ Önemli Notlar
 
-### Ollama Erişimi
-- VQA ve Detect servisleri Ollama'ya erişmek için `network_mode: "host"` kullanır
+### Ollama Yönetimi
+- **Kritik**: Ollama servisi bazen yeniden başlatılması gerekebilir
+- Detect servisi timeout verirse: `sudo systemctl restart ollama`
 - Ollama host'ta çalışmalı (127.0.0.1:11434)
-- Container'da `host.docker.internal` çalışmaz (sadece Mac/Win Docker Desktop)
+- Container'lar `network_mode: "host"` kullanır
 
-### GPU Gereksinimleri
-- **imggen**: GPU hızlandırma ister (CUDA 12.1)
-- **detect**: **GPU gerekmez** - LLaVA Ollama üzerinden çalışır 🆕
-- **vqa**: GPU gerekmez - Ollama üzerinden çalışır
+### GPU Kullanımı
+- **imggen**: CUDA GPU hızlandırması kullanır
+- **detect**: Ollama üzerinden çalışır (GPU opsiyonel)
+- **vqa**: Ollama üzerinden çalışır (GPU opsiyonel)
 
 ## 🛠️ Kurulum
 
 ### 1. Ollama Kurulumu (Host)
 ```bash
-# Ollama'ı host'ta kur ve çalıştır
+# Ollama'yı host'ta kur ve çalıştır
 curl -fsSL https://ollama.ai/install.sh | sh
-ollama serve
+sudo systemctl enable ollama
+sudo systemctl start ollama
 
-# LLaVA-34B modelini indir (nesne tespiti için)
-ollama pull llava:34b
-
-# LLaVA modelini indir (VQA için)
-ollama pull llava
+# Gerekli modelleri indir
+ollama pull gemma3:27b    # Detect servisi için
+ollama pull llava:34b     # VQA servisi için
 ```
 
-### 2. NVIDIA Docker Kurulumu (sadece imggen için)
+### 2. NVIDIA Docker Kurulumu
 ```bash
 # NVIDIA Container Toolkit kur
 distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
@@ -48,27 +61,31 @@ sudo apt-get install -y nvidia-docker2
 sudo systemctl restart docker
 ```
 
-### 3. Servisleri Başlat
+### 3. Proje Kurulumu
 ```bash
-# Tüm servisleri build et ve başlat
-docker-compose up --build
+# Projeyi klonla
+git clone <repository-url>
+cd ai_hub
 
-# Arka planda çalıştır
-docker-compose up -d --build
+# Gerekli dizinleri oluştur
+mkdir -p uploads outputs
+
+# Servisleri başlat
+docker-compose up --build -d
 ```
 
 ## 📁 Dizin Yapısı
 
 ```
-ai-hub-services/
+ai_hub/
 ├── services/
 │   ├── imggen/          # Görsel üretim servisi (GPU gerekli)
-│   ├── vqa/            # VQA servisi (Ollama üzerinden)
-│   └── detect/         # **LLaVA nesne tespiti (Ollama üzerinden)** 🆕
-├── uploads/            # Yüklenen dosyalar
-├── outputs/            # Üretilen çıktılar
-├── docker-compose.yml  # Servis konfigürasyonu
-└── nginx.conf         # Nginx konfigürasyonu
+│   ├── detect/          # Nesne tespiti servisi (Ollama üzerinden)
+│   └── vqa/             # VQA servisi (Ollama üzerinden)
+├── uploads/             # Yüklenen dosyalar
+├── outputs/             # Üretilen çıktılar
+├── docker-compose.yml   # Servis konfigürasyonu
+└── README.md            
 ```
 
 ## 🔧 API Kullanımı
@@ -80,69 +97,135 @@ curl -X POST http://localhost:8001/generate \
   -d '{"prompt": "a beautiful sunset over mountains"}'
 ```
 
+### Nesne Tespiti (detect)
+```bash
+curl -X POST http://localhost:8003/detect \
+  -F "image=@uploads/deneme2.jpg" \
+  -F "confidence=0.3" \
+  -F "max_objects=15"
+```
+
 ### Görselden Soru-Cevap (vqa)
 ```bash
 curl -X POST http://localhost:8002/vqa \
-  -F "image=@image.jpg" \
+  -F "image=@uploads/deneme2.jpg" \
   -F "question=What do you see in this image?"
 ```
 
-### **LLaVA Nesne Tespiti (detect)** 🆕
-```bash
-# Port 8000'de çalışır (host network)
-curl -X POST http://localhost:8000/detect \
-  -F "image=@image.jpg"
-```
+## 🔄 Sistem Akış Diyagramı
 
-**Çıktı örneği:**
-```json
-{
-  "detections": [
-    {
-      "name": "araba",
-      "location": "görselin sol tarafında",
-      "details": "kırmızı renk, orta boyut",
-      "confidence": 95
-    },
-    {
-      "name": "bina",
-      "location": "arka planda",
-      "details": "yüksek, modern mimari",
-      "confidence": 88
-    }
-  ],
-  "total_objects": 2,
-  "model": "llava:34b"
-}
+```mermaid
+graph TB
+    A[Kullanıcı] --> B[API İstekleri]
+    
+    B --> C[ImageGen Servisi<br/>Port 8001]
+    B --> D[Detect Servisi<br/>Port 8003]
+    B --> E[VQA Servisi<br/>Port 8002]
+    
+    C --> F[SDXL-Turbo Model<br/>CUDA GPU]
+    F --> G[Görsel Üretimi<br/>outputs/ klasörü]
+    
+    D --> H[Ollama API<br/>127.0.0.1:11434]
+    E --> H
+    
+    H --> I[Gemma3:27b Model<br/>Nesne Tespiti]
+    H --> J[LLaVA:34b Model<br/>Görsel Soru-Cevap]
+    
+    I --> K[Türkçe Nesne Listesi<br/>JSON Response]
+    J --> L[Görsel Analiz Cevabı<br/>JSON Response]
+    
+    G --> M[Kullanıcıya Dönen Sonuç]
+    K --> M
+    L --> M
+    
+    style C fill:#e1f5fe
+    style D fill:#f3e5f5
+    style E fill:#e8f5e8
+    style F fill:#fff3e0
+    style H fill:#fce4ec
 ```
 
 ## 🐛 Sorun Giderme
+
+### Ollama Timeout Hatası
+```bash
+# Ollama servisini yeniden başlat
+sudo systemctl restart ollama
+
+# Servis durumunu kontrol et
+sudo systemctl status ollama
+
+# Modellerin yüklü olduğunu kontrol et
+ollama list
+```
 
 ### GPU Hatası (imggen için)
 ```bash
 # NVIDIA Docker çalışıyor mu kontrol et
 docker run --rm --gpus all nvidia/cuda:12.1.1-base-ubuntu22.04 nvidia-smi
-```
 
-### Ollama Bağlantı Hatası
-```bash
-# Ollama host'ta çalışıyor mu kontrol et
-curl http://127.0.0.1:11434/api/tags
-
-# LLaVA-34B modeli var mı kontrol et
-ollama list
+# GPU kullanımını kontrol et
+nvidia-smi
 ```
 
 ### Port Çakışması
 ```bash
 # Hangi portlar kullanılıyor kontrol et
 netstat -tlnp | grep :800
+
+# Container'ları kontrol et
+docker ps
 ```
 
-## 📝 Notlar
+### Servis Sağlık Kontrolü
+```bash
+# Tüm servislerin sağlığını kontrol et
+curl http://localhost:8001/health  # ImageGen
+curl http://localhost:8002/health  # VQA
+curl http://localhost:8003/health  # Detect
+```
 
-- **detect servisi**: Artık LLaVA-34B kullanır, GPU'ya gerek yok
-- **Çevre/Şehircilik**: Binalar, yollar, yeşil alanlar tespit edilebilir
-- **Türkçe destek**: LLaVA Türkçe nesne tespiti yapabilir
-- **Detaylı analiz**: Sadece tespit değil, konum ve detay bilgisi
-- **Host network**: Detect ve VQA servisleri host network kullanır
+## 📝 Özellikler
+
+- **Türkçe Destek**: Detect servisi Türkçe nesne tespiti yapar
+- **GPU Hızlandırma**: ImageGen servisi CUDA GPU kullanır
+- **Modüler Yapı**: Her servis bağımsız olarak çalışabilir
+- **Docker Tabanlı**: Kolay kurulum ve dağıtım
+- **RESTful API**: Standart HTTP API'ler
+- **Dosya Yönetimi**: Otomatik upload/output yönetimi
+
+## 🔧 Geliştirme
+
+### Yeni Servis Ekleme
+1. `services/` altında yeni klasör oluştur
+2. `Dockerfile` ve `app.py` ekle
+3. `docker-compose.yml`'e servis ekle
+4. Gerekli portları ayarla
+
+### Log Kontrolü
+```bash
+# Tüm servislerin loglarını gör
+docker-compose logs -f
+
+# Belirli servisin loglarını gör
+docker-compose logs -f imggen
+docker-compose logs -f detect
+docker-compose logs -f vqa
+```
+
+## 📊 Performans
+
+- **ImageGen**: ~2-5 saniye (GPU'ya bağlı)
+- **Detect**: ~3-8 saniye (Ollama'ya bağlı)
+- **VQA**: ~5-15 saniye (Ollama'ya bağlı)
+
+## 🤝 Katkıda Bulunma
+
+1. Fork yap
+2. Feature branch oluştur
+3. Değişikliklerini commit et
+4. Pull request gönder
+
+## 📄 Lisans
+
+Bu proje MIT lisansı altında lisanslanmıştır.
