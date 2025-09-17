@@ -6,7 +6,7 @@ Bu proje, görsel üretim, nesne tespiti ve görselden soru-cevap servislerini i
 
 - **imggen** (Port 8001): SDXL-Turbo ile görsel üretim (GPU hızlandırmalı)
 - **detect** (Port 8003): Gemma3:27b ile nesne tespiti (Ollama üzerinden)
-- **vqa** (Port 8002): LLaVA:34b ile görselden soru-cevap (Ollama üzerinden)
+- **vqa** (Port 8002): Qwen2.5VL:32b ile interaktif görselden soru-cevap (Ollama üzerinden)
 
 ## 🖥️ Sistem Gereksinimleri
 
@@ -46,7 +46,7 @@ sudo systemctl start ollama
 
 # Gerekli modelleri indir
 ollama pull gemma3:27b    # Detect servisi için
-ollama pull llava:34b     # VQA servisi için
+ollama pull qwen2.5vl:32b # VQA servisi için
 ```
 
 ### 2. NVIDIA Docker Kurulumu
@@ -137,12 +137,33 @@ curl -X POST http://localhost:8003/detect \
 }
 ```
 
-### Görselden Soru-Cevap (vqa)
+### Interaktif Görselden Soru-Cevap (vqa)
 ```bash
-curl -X POST http://localhost:8002/vqa \
-  -F "image=@data/uploads/images/deneme2.jpg" \
-  -F "question=What do you see in this image?"
+# 1. Görsel yükle ve session oluştur
+curl -X POST http://localhost:8002/upload \
+  -F "image=@data/uploads/images/deneme2.jpg"
+
+# 2. Session ID ile soru sor
+curl -X POST http://localhost:8002/ask \
+  -F "question=Bu görselde ne görüyorsun?" \
+  -F "session_id=YOUR_SESSION_ID"
+
+# 3. Session durumunu kontrol et
+curl "http://localhost:8002/status?session_id=YOUR_SESSION_ID"
+
+# 4. Konuşma geçmişini gör
+curl "http://localhost:8002/history?session_id=YOUR_SESSION_ID"
+
+# 5. Session'ı temizle
+curl -X POST http://localhost:8002/clear \
+  -F "session_id=YOUR_SESSION_ID"
 ```
+
+**Özellikler:**
+- ✅ **Hybrid Yaklaşım**: Görsel bir kez yüklenir, peş peşe sorular sorulabilir
+- ✅ **Session Yönetimi**: Dosya tabanlı session sistemi
+- ✅ **Konuşma Geçmişi**: Tüm soru-cevaplar saklanır
+- ✅ **Qwen2.5VL:32b**: Gelişmiş görsel anlama modeli
 
 ## 🔄 Sistem Akış Diyagramı
 
@@ -161,10 +182,10 @@ graph TB
     E --> H
     
     H --> I[Gemma3:27b Model<br/>Nesne Tespiti]
-    H --> J[LLaVA:34b Model<br/>Görsel Soru-Cevap]
+    H --> J[Qwen2.5VL:32b Model<br/>Interaktif Görsel Soru-Cevap]
     
     I --> K[Türkçe Nesne Analizi<br/>JSON Response Only]
-    J --> L[Görsel Soru-Cevap<br/>JSON Response Only]
+    J --> L[Session Tabanlı Soru-Cevap<br/>Hybrid Yaklaşım]
     
     G --> M[Kullanıcıya Dönen Sonuç]
     K --> M
@@ -253,7 +274,31 @@ docker-compose logs -f vqa
 
 - **ImageGen**: ~2-5 saniye (GPU'ya bağlı) - Görsel üretir ve kaydeder
 - **Detect**: ~3-8 saniye (Ollama'ya bağlı) - Sadece analiz yapar, dosya kaydetmez
-- **VQA**: ~5-15 saniye (Ollama'ya bağlı) - Sadece metin cevabı döner
+- **VQA**: ~5-15 saniye (Ollama'ya bağlı) - Session tabanlı interaktif soru-cevap
+
+## 🧪 Test Sonuçları
+
+### VQA Servisi (Qwen2.5VL:32b) Test Edildi
+
+**✅ Başarılı Testler:**
+- **Aile Fotoğrafı**: 3 kişi, köpek, otomobil detaylarını doğru tespit etti
+- **Orman Yangını**: Yangın etkilerini, çevre zararlarını ve çözüm önerilerini analiz etti
+- **Müsilaj**: Su kirliliğini tespit etti (spesifik müsilaj tanımı yapamadı)
+
+**🔍 Model Güçlü Yanları:**
+- Türkçe cevap verme
+- Detaylı görsel analiz
+- Çevre sorunlarını tanıma
+- Ekosistem etkilerini anlama
+- Çözüm önerileri sunma
+
+**⚠️ Model Sınırları:**
+- Spesifik çevre sorunlarını (müsilaj gibi) doğrudan tanımlayamama
+- Bazı karakterlerde encoding sorunu
+- Bazen çok uzun cevaplar
+
+**📈 Genel Değerlendirme:**
+Qwen2.5VL:32b modeli genel görsel anlama ve çevre analizi konularında çok başarılı. Interaktif VQA sistemi mükemmel çalışıyor.
 
 ## 🤝 Katkıda Bulunma
 

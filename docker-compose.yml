@@ -18,16 +18,17 @@ services:
               count: 1
               capabilities: [gpu]
 
-  # Görselden soru-cevap servisi (LLaVA-34B)
+  # Görselden soru-cevap servisi (Qwen2.5VL-32B)
   # NOT: Ollama host'ta çalıştığı için host network kullan
   vqa:
     build: ./services/image/vqa
     network_mode: "host"
     environment:
       - OLLAMA_BASE_URL=http://127.0.0.1:11434
-      - MODEL_NAME=llava:34b
+      - MODEL_NAME=qwen2.5vl:32b
     volumes:
       - ./data/uploads/images:/app/uploads
+      - ./data/uploads/sessions:/app/sessions
 
   # Nesne tespiti servisi (Gemma3-27B)
   # NOT: Gemma3 Ollama üzerinden çalışır, GPU'ya gerek yok
