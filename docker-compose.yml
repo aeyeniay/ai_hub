@@ -4,11 +4,13 @@ services:
   imggen:
     build: ./services/image/imggen
     ports:
-      - "8001:8000"
+      - "${IMGGEN_PORT:-8001}:8000"
     environment:
-      - MODEL_ID=stabilityai/sdxl-turbo
-      - DEVICE=cuda
+      - MODEL_ID=${IMGGEN_MODEL:-stabilityai/sdxl-turbo}
+      - MODEL_PATH=/app/models/sdxl-turbo
+      - DEVICE=${DEVICE:-cuda}
     volumes:
+      - ./models/sdxl-turbo:/app/models/sdxl-turbo
       - ./data/outputs/images:/app/outputs
     deploy:
       resources:
@@ -24,8 +26,8 @@ services:
     build: ./services/image/vqa
     network_mode: "host"
     environment:
-      - OLLAMA_BASE_URL=http://127.0.0.1:11434
-      - MODEL_NAME=qwen2.5vl:32b
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://127.0.0.1:11434}
+      - MODEL_NAME=${QWEN_VL_MODEL:-qwen2.5vl:32b}
     volumes:
       - ./data/uploads/images:/app/uploads
       - ./data/uploads/sessions:/app/sessions
@@ -36,12 +38,54 @@ services:
     build: ./services/image/detect
     network_mode: "host"
     environment:
-      - OLLAMA_BASE_URL=http://127.0.0.1:11434
-      - MODEL_NAME=gemma3:27b
-      - CONFIDENCE_THRESHOLD=0.5
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://127.0.0.1:11434}
+      - MODEL_NAME=${GEMMA_MODEL:-gemma3:27b}
+      - CONFIDENCE_THRESHOLD=${CONFIDENCE_THRESHOLD:-0.5}
     volumes:
       - ./data/uploads/images:/app/uploads
       - ./data/outputs/images:/app/outputs
+
+  # PII Maskeleme servisi
+  pii-masking:
+    build: ./services/text/pii-masking
+    network_mode: "host"
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://127.0.0.1:11434}
+      - MODEL_NAME=${GEMMA_MODEL:-gemma3:27b}
+    volumes:
+      - ./data/uploads/text:/app/uploads
+      - ./data/outputs/text:/app/outputs
+
+  # Şablona göre yeniden yazma servisi
+  template-rewrite:
+    build: ./services/text/template-rewrite
+    ports:
+      - "${TEMPLATE_REWRITE_PORT:-8005}:8000"
+    volumes:
+      - ./data/uploads/text:/app/uploads
+      - ./data/outputs/text:/app/outputs
+
+  # Quiz üretici servisi
+  quiz-generator:
+    build: ./services/text/quiz-generator
+    network_mode: "host"
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://127.0.0.1:11434}
+      - MODEL_NAME=${GEMMA_MODEL:-gemma3:27b}
+      - PORT=8006
+    volumes:
+      - ./data/uploads/text:/app/uploads
+      - ./data/outputs/text:/app/outputs
+      - ./data/quiz_sessions:/app/quiz_sessions
+
+  # Flashcard üretici servisi
+  flashcard-generator:
+    build: ./services/text/flashcard-generator
+    ports:
+      - "${FLASHCARD_GENERATOR_PORT:-8007}:8000"
+    volumes:
+      - ./data/uploads/text:/app/uploads
+      - ./data/outputs/text:/app/outputs
 
 # Nginx geçici olarak kapatıldı
   # nginx:

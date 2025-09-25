@@ -39,14 +39,29 @@ Thumbs.db
 .dockerignore
 
 # Project specific
-uploads/
-outputs/
+data/uploads/*
+data/outputs/* 
+data/quiz_sessions/*
+models/*
 *.log
 
 # Environment variables
 .env
 .env.local
 .env.production
+
+# AI Hub specific
+services/*/uploads/
+services/*/outputs/
+services/*/sessions/
+services/*/quiz_sessions/
+
+# Model files
+*.bin
+*.safetensors
+*.onnx
+*.pth
+*.pt
 
 # Temporary files
 *.tmp

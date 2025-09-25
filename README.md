@@ -4,9 +4,16 @@ Bu proje, görsel üretim, nesne tespiti ve görselden soru-cevap servislerini i
 
 ## 🚀 Servisler
 
-- **imggen** (Port 8001): SDXL-Turbo ile görsel üretim (GPU hızlandırmalı)
+### 🎨 Görsel Servisleri
+- **imggen** (Port 8001): SDXL-Turbo ile görsel üretim (GPU hızlandırmalı, offline capable)
 - **detect** (Port 8003): Gemma3:27b ile nesne tespiti (Ollama üzerinden)
 - **vqa** (Port 8002): Qwen2.5VL:32b ile interaktif görselden soru-cevap (Ollama üzerinden)
+
+### 📝 Metin Servisleri
+- **pii-masking** (Port 8000): Gemma3:27b ile kişisel bilgi maskeleme (Ollama üzerinden)
+- **quiz-generator** (Port 8006): Gemma3:27b ile interaktif quiz oluşturma ve oynama (Ollama üzerinden)
+- **template-rewrite** (Port 8005): Metin şablonlama ve yeniden yazma
+- **flashcard-generator** (Port 8007): Flashcard üretimi
 
 ## 🖥️ Sistem Gereksinimleri
 
@@ -200,6 +207,47 @@ graph TB
     style L fill:#f8f9fa
 ```
 
+### 📝 Text Servisleri Sistem Akışı
+
+```mermaid
+graph TB
+    A[Kullanıcı] --> B[API İstekleri]
+    
+    B --> C[PII-Masking Servisi<br/>Port 8000]
+    B --> D[Quiz-Generator Servisi<br/>Port 8006]
+    B --> E[Template-Rewrite Servisi<br/>Port 8005]
+    B --> F[Flashcard-Generator Servisi<br/>Port 8007]
+    
+    C --> G[Ollama API<br/>127.0.0.1:11434]
+    D --> G
+    
+    G --> H[Gemma3:27b Model<br/>Kişisel Bilgi Maskeleme]
+    G --> I[Gemma3:27b Model<br/>Quiz Oluşturma ve Oynama]
+    
+    H --> J[Türkçe PII Tespit ve Maskeleme<br/>JSON Response]
+    I --> K[Interaktif Quiz Sistemi<br/>Session Tabanlı Oyun]
+    
+    E --> L[Metin Şablonlama<br/>Template Processing]
+    F --> M[Flashcard Üretimi<br/>Eğitim Materyali]
+    
+    J --> N[Kullanıcıya Dönen Sonuç]
+    K --> N
+    L --> N
+    M --> N
+    
+    style C fill:#e8f5e8
+    style D fill:#fff3e0
+    style E fill:#f3e5f5
+    style F fill:#e1f5fe
+    style G fill:#fce4ec
+    style H fill:#f8f9fa
+    style I fill:#f8f9fa
+    style J fill:#f8f9fa
+    style K fill:#f8f9fa
+    style L fill:#f8f9fa
+    style M fill:#f8f9fa
+```
+
 ## 🐛 Sorun Giderme
 
 ### Ollama Timeout Hatası
@@ -238,17 +286,22 @@ docker ps
 curl http://localhost:8001/health  # ImageGen
 curl http://localhost:8002/health  # VQA
 curl http://localhost:8003/health  # Detect
+curl http://localhost:8000/health  # PII Masking
+curl http://localhost:8006/health  # Quiz Generator
 ```
 
 ## 📝 Özellikler
 
-- **Türkçe Destek**: Detect servisi Türkçe nesne tespiti yapar
+- **Türkçe Destek**: Detect, PII-Masking ve Quiz servisleri Türkçe doğal dil işleme yapar
 - **GPU Hızlandırma**: ImageGen servisi CUDA GPU kullanır
+- **Offline Capability**: ImageGen servisi internet olmadan çalışabilir
 - **Modüler Yapı**: Her servis bağımsız olarak çalışabilir
 - **Docker Tabanlı**: Kolay kurulum ve dağıtım
 - **RESTful API**: Standart HTTP API'ler
 - **Merkezi Dosya Yönetimi**: Tüm dosyalar `data/` klasöründe organize edilir
-- **Temiz Çıktılar**: Detect servisi sadece analiz yapar, gereksiz dosya kaydetmez
+- **Session Yönetimi**: VQA ve Quiz servisleri session tabanlı çalışır
+- **Interaktif Oyunlar**: Quiz servisi gerçek zamanlı soru-cevap oyunu sağlar
+- **PII Koruma**: Otomatik kişisel bilgi tespit ve maskeleme
 
 ## 🔧 Geliştirme
 
@@ -299,6 +352,45 @@ docker-compose logs -f vqa
 
 **📈 Genel Değerlendirme:**
 Qwen2.5VL:32b modeli genel görsel anlama ve çevre analizi konularında çok başarılı. Interaktif VQA sistemi mükemmel çalışıyor.
+
+### Quiz Generator Servisi (Gemma3:27b) Test Edildi
+
+**✅ Başarılı Testler:**
+- **Türkiye Cumhuriyeti Metni**: 3 soruluk quiz başarıyla oluşturuldu
+- **Sıfır Atık Metni**: 5 soruluk quiz başarıyla oluşturuldu
+- **İnteraktif Oyun**: Soru-cevap döngüsü mükemmel çalışıyor
+- **Session Yönetimi**: Quiz ilerlemesi kalıcı olarak saklanıyor
+
+**🎯 Quiz Özellikleri:**
+- 4 şıklı çoktan seçmeli sorular
+- Türkçe soru ve açıklamalar
+- Otomatik doğru/yanlış kontrolü
+- Skor takibi ve ilerleme
+- Sonraki soru otomatik gösterimi
+
+**📊 API Endpoints:**
+- `POST /generate`: Quiz oluşturma
+- `POST /answer`: Cevap verme + feedback
+- `GET /quiz/{id}`: Quiz durumu kontrolü
+
+**⚙️ Teknik Özellikler:**
+- **Model**: Gemma3:27b via Ollama
+- **Session**: JSON dosya tabanlı
+- **Port**: 8006 (host network)
+- **Response Time**: ~15-30 saniye quiz üretimi
+
+**🎮 Örnek Kullanım:**
+```bash
+# Quiz oluştur
+curl -X POST http://localhost:8006/generate \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Metniniz...", "num_questions":5}'
+
+# Cevap ver
+curl -X POST http://localhost:8006/answer \
+  -H "Content-Type: application/json" \
+  -d '{"quiz_id":"quiz-id", "question_index":0, "user_answer":"A) Seçenek"}'
+```
 
 ## 🤝 Katkıda Bulunma
 

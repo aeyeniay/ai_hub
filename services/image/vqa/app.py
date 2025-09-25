@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import requests
 import os
 import base64
@@ -9,6 +10,7 @@ import json
 from datetime import datetime
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # Ollama konfigürasyonu
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
