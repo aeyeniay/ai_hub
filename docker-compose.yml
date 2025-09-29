@@ -56,15 +56,6 @@ services:
       - ./data/uploads/text:/app/uploads
       - ./data/outputs/text:/app/outputs
 
-  # Şablona göre yeniden yazma servisi
-  template-rewrite:
-    build: ./services/text/template-rewrite
-    ports:
-      - "${TEMPLATE_REWRITE_PORT:-8005}:8000"
-    volumes:
-      - ./data/uploads/text:/app/uploads
-      - ./data/outputs/text:/app/outputs
-
   # Quiz üretici servisi
   quiz-generator:
     build: ./services/text/quiz-generator
@@ -78,14 +69,19 @@ services:
       - ./data/outputs/text:/app/outputs
       - ./data/quiz_sessions:/app/quiz_sessions
 
-  # Flashcard üretici servisi
-  flashcard-generator:
-    build: ./services/text/flashcard-generator
-    ports:
-      - "${FLASHCARD_GENERATOR_PORT:-8007}:8000"
+  # Şablona göre yeniden yazma servisi
+  template-rewrite:
+    build: ./services/text/template-rewrite
+    network_mode: "host"
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://127.0.0.1:11434}
+      - MODEL_NAME=${GEMMA_MODEL:-gemma3:27b}
+      - PORT=8005
     volumes:
       - ./data/uploads/text:/app/uploads
       - ./data/outputs/text:/app/outputs
+      - ./services/text/template-rewrite/templates:/app/templates
+
 
 # Nginx geçici olarak kapatıldı
   # nginx:

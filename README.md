@@ -12,8 +12,7 @@ Bu proje, görsel üretim, nesne tespiti ve görselden soru-cevap servislerini i
 ### 📝 Metin Servisleri
 - **pii-masking** (Port 8000): Gemma3:27b ile kişisel bilgi maskeleme (Ollama üzerinden)
 - **quiz-generator** (Port 8006): Gemma3:27b ile interaktif quiz oluşturma ve oynama (Ollama üzerinden)
-- **template-rewrite** (Port 8005): Metin şablonlama ve yeniden yazma
-- **flashcard-generator** (Port 8007): Flashcard üretimi
+- **template-rewrite** (Port 8005): Word şablonları ile gerekçe belgesi oluşturma (Ollama üzerinden)
 
 ## 🖥️ Sistem Gereksinimleri
 
@@ -216,36 +215,32 @@ graph TB
     B --> C[PII-Masking Servisi<br/>Port 8000]
     B --> D[Quiz-Generator Servisi<br/>Port 8006]
     B --> E[Template-Rewrite Servisi<br/>Port 8005]
-    B --> F[Flashcard-Generator Servisi<br/>Port 8007]
     
-    C --> G[Ollama API<br/>127.0.0.1:11434]
-    D --> G
+    C --> F[Ollama API<br/>127.0.0.1:11434]
+    D --> F
     
-    G --> H[Gemma3:27b Model<br/>Kişisel Bilgi Maskeleme]
-    G --> I[Gemma3:27b Model<br/>Quiz Oluşturma ve Oynama]
+    F --> G[Gemma3:27b Model<br/>Kişisel Bilgi Maskeleme]
+    F --> H[Gemma3:27b Model<br/>Quiz Oluşturma ve Oynama]
     
-    H --> J[Türkçe PII Tespit ve Maskeleme<br/>JSON Response]
-    I --> K[Interaktif Quiz Sistemi<br/>Session Tabanlı Oyun]
+    G --> I[Türkçe PII Tespit ve Maskeleme<br/>JSON Response]
+    H --> J[Interaktif Quiz Sistemi<br/>Session Tabanlı Oyun]
     
-    E --> L[Metin Şablonlama<br/>Template Processing]
-    F --> M[Flashcard Üretimi<br/>Eğitim Materyali]
+    E --> K[Metin Şablonlama<br/>Template Processing]
     
-    J --> N[Kullanıcıya Dönen Sonuç]
-    K --> N
-    L --> N
-    M --> N
+    I --> L[Kullanıcıya Dönen Sonuç]
+    J --> L
+    K --> L
     
     style C fill:#e8f5e8
     style D fill:#fff3e0
     style E fill:#f3e5f5
-    style F fill:#e1f5fe
-    style G fill:#fce4ec
+    style F fill:#fce4ec
+    style G fill:#f8f9fa
     style H fill:#f8f9fa
     style I fill:#f8f9fa
     style J fill:#f8f9fa
     style K fill:#f8f9fa
     style L fill:#f8f9fa
-    style M fill:#f8f9fa
 ```
 
 ## 🐛 Sorun Giderme
@@ -302,6 +297,8 @@ curl http://localhost:8006/health  # Quiz Generator
 - **Session Yönetimi**: VQA ve Quiz servisleri session tabanlı çalışır
 - **Interaktif Oyunlar**: Quiz servisi gerçek zamanlı soru-cevap oyunu sağlar
 - **PII Koruma**: Otomatik kişisel bilgi tespit ve maskeleme
+- **Word Şablon Desteği**: Mevcut Word dosyalarını şablon olarak kullanma
+- **Dinamik Belge Üretimi**: LLM ile akıllı gerekçe belgesi oluşturma
 
 ## 🔧 Geliştirme
 

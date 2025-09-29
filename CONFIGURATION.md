@@ -55,7 +55,6 @@ DETECT_PORT=8003
 PII_MASKING_PORT=8000
 TEMPLATE_REWRITE_PORT=8005
 QUIZ_GENERATOR_PORT=8006
-FLASHCARD_GENERATOR_PORT=8007
 
 # Port çakışması durumunda değiştirin
 VQA_PORT=9002
@@ -173,6 +172,65 @@ curl http://localhost:8001/health | jq
 - **Cache-First**: HuggingFace cache'den `local_files_only=True`
 - **Local Path**: Mount edilmiş `/app/models/sdxl-turbo` path'i
 - **Online Fallback**: Son çare olarak HuggingFace'den indirme
+
+## 📝 Template-Rewrite Özel Ayarları
+
+### Template-Rewrite Konfigürasyonu
+```bash
+# Template-rewrite servisi portu
+TEMPLATE_REWRITE_PORT=8005
+
+# Şablon dosyaları için volume
+./services/text/template-rewrite/templates:/app/templates
+
+# Çıktı dosyaları için volume
+./data/outputs/text:/app/outputs
+
+# Ollama bağlantısı
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+MODEL_NAME=gemma3:27b
+```
+
+### Template-Rewrite Test Etme
+```bash
+# Sağlık kontrolü
+curl http://localhost:8005/health
+
+# Gerekçe belgesi oluşturma testi
+curl -X POST http://localhost:8005/generate-gerekce \
+  -H "Content-Type: application/json" \
+  -d '{
+    "konu": "Test Gerekçesi",
+    "icerik_konusu": "Bu bir test gerekçesidir.",
+    "imza_atacaklar": [
+      {
+        "isim": "Test Kullanıcı",
+        "unvan": "Test Müdürü"
+      }
+    ]
+  }'
+```
+
+### Şablon Yönetimi
+```bash
+# Şablon dosyalarını kontrol et
+ls -la services/text/template-rewrite/templates/gerekceler/
+
+# Yeni Word şablonu ekle
+cp yeni_sablon.docx services/text/template-rewrite/templates/gerekceler/
+
+# Servisi yeniden başlat (otomatik yükleme)
+docker compose restart template-rewrite
+```
+
+### Çıktı Dosyaları
+```bash
+# Oluşturulan belgeleri kontrol et
+ls -la data/outputs/text/
+
+# Belge boyutlarını kontrol et
+du -sh data/outputs/text/*.docx
+```
 
 ## 🎮 Quiz Generator Özel Ayarları
 

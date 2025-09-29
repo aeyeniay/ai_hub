@@ -28,13 +28,6 @@ Bu klasör, metin işleme servislerini içerir. Her servis bağımsız olarak ç
 - Zorluk seviyesi ayarlama
 - Konu bazlı filtreleme
 
-### 4. Flashcard Generator Service (Port 8007)
-**Dosya Yolu**: `flashcard-generator/`
-**Açıklama**: Metin içeriğinden flashcard'lar üreten servis
-**Özellikler**:
-- Farklı kart türleri (basic, cloze, image, audio)
-- Zorluk seviyesi ayarlama
-- Görsel ve ses desteği
 
 ## 🚀 Kurulum
 

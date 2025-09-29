@@ -1,44 +1,49 @@
-# 📝 Template-Rewrite Servisi - Metin Şablonlama ve Yeniden Yazma
+# 📝 Template-Rewrite Servisi - Gerekçe Belgesi Oluşturma
 
-Bu servis, metinleri önceden tanımlanmış şablonlara göre yeniden yazmak ve formatlamak için tasarlanmıştır.
+Bu servis, Word şablonlarını kullanarak dinamik gerekçe belgeleri oluşturmak için tasarlanmıştır. Ollama LLM modeli ile içerik üretimi yapar ve Word formatında çıktı verir.
 
 ## 🚀 Özellikler
 
-- **Şablon Tabanlı Yazma**: Önceden tanımlanmış formatlar
-- **Çoklu Stil Desteği**: Professional, casual, academic, creative
-- **Değişken Yerleştirme**: Template içine dinamik veri ekleme
-- **Otomatik Formatla**: Metni belirli kurallara göre düzenle
-- **API Tabanlı**: RESTful API ile kolay entegrasyon
-- **Genişletilebilir**: Yeni şablonlar kolayca eklenebilir
+- **Word Şablon Desteği**: Mevcut Word dosyalarını şablon olarak kullanma
+- **Dinamik İçerik Üretimi**: Ollama LLM ile akıllı içerik oluşturma
+- **Otomatik Başlık**: İçeriğe göre dinamik başlık üretimi
+- **Dinamik İmza Yönetimi**: Değişken sayıda imzacı desteği
+- **Merkezi Hizalama**: İmzaları otomatik ortalama
+- **Word Çıktısı**: .docx formatında profesyonel belgeler
+- **Şablon Öğrenme**: Mevcut belgelerden öğrenerek benzer yapıda içerik üretme
 
 ## 🛠️ Teknik Detaylar
 
 ### API Endpoints
 
-#### 1. Metin Yeniden Yazma
+#### 1. Gerekçe Belgesi Oluşturma
 ```http
-POST /rewrite
+POST /generate-gerekce
 Content-Type: application/json
 
 {
-  "text": "Bu bir test metnidir. Yeniden yazılması gerekiyor.",
-  "template": "formal_letter",
-  "variables": {
-    "recipient": "Sayın Müdür",
-    "sender": "Ahmet Yılmaz",
-    "date": "2024-01-20"
-  },
-  "style": "professional"
+  "konu": "Sıfır Atık Projesi Uygulama Gerekçesi",
+  "icerik_konusu": "Detaylı açıklama metni buraya gelir...",
+        "imza_atacaklar": [
+          {
+            "isim": "Dr. Mehmet Öz",
+            "unvan": "Genel Müdür"
+          },
+          {
+            "isim": "Ayşe Yılmaz", 
+            "unvan": "İnsan Kaynakları Müdürü"
+          }
+        ]
 }
 ```
 
 **Response:**
 ```json
 {
-  "original_text": "Bu bir test metnidir. Yeniden yazılması gerekiyor.",
-  "rewritten_text": "Sayın Müdür,\n\nBu konuda görüşlerinizi almak üzere size yazıyorum. İlgili metni incelemenizi ve değerlendirmenizi rica ederim.\n\nSaygılarımla,\nAhmet Yılmaz\n2024-01-20",
-  "template_used": "formal_letter",
-  "status": "success"
+  "success": true,
+  "message": "Gerekçe belgesi başarıyla oluşturuldu",
+  "file_path": "/app/outputs/Yapay_Zeka_Eğitimi_c6cfd66d.docx",
+  "filename": "Yapay_Zeka_Eğitimi_c6cfd66d.docx"
 }
 ```
 
@@ -51,137 +56,78 @@ GET /health
 ```json
 {
   "status": "healthy",
-  "service": "template-rewrite"
+  "model": "gemma3:27b",
+  "ollama_connected": true,
+  "templates_loaded": 3
 }
 ```
 
-### Desteklenen Şablonlar
+### Şablon Yönetimi
 
-#### 1. Formal Letter (Resmi Mektup)
-```json
-{
-  "template": "formal_letter",
-  "variables": {
-    "recipient": "Alıcı Adı",
-    "sender": "Gönderici Adı", 
-    "date": "Tarih",
-    "subject": "Konu"
-  }
-}
+#### Word Şablonları
+Servis, `templates/gerekceler/` klasöründeki Word dosyalarını otomatik olarak yükler:
+
+```
+templates/gerekceler/
+├── Yapay Zeka Danışmanlık Gerekce.docx
+├── YAPAY ZEKA SUNUCUSUNUN SATIN ALIM GEREKCESI.docx
+└── MUAYENE VE TESPİT TUTANAGI.docx
 ```
 
-#### 2. Email Template (E-posta Şablonu)
-```json
-{
-  "template": "email",
-  "variables": {
-    "to": "alici@example.com",
-    "from": "gonderici@example.com",
-    "subject": "E-posta Konusu"
-  }
-}
-```
+#### Şablon İşleme
+1. **Word Dosyası Okuma**: `python-docx` ile metin çıkarımı
+2. **Yapı Analizi**: Başlık, içerik ve imza bölümlerini tespit
+3. **JSON Dönüşümü**: LLM için yapılandırılmış format
+4. **Örnek Kullanımı**: LLM'e referans olarak gönderme
 
-#### 3. Report Template (Rapor Şablonu)
-```json
-{
-  "template": "report",
-  "variables": {
-    "title": "Rapor Başlığı",
-    "author": "Yazar Adı",
-    "date": "Rapor Tarihi",
-    "department": "Departman"
-  }
-}
-```
+### İmza Yönetimi
 
-#### 4. Blog Post (Blog Yazısı)
-```json
-{
-  "template": "blog_post",
-  "variables": {
-    "title": "Yazı Başlığı",
-    "author": "Yazar",
-    "category": "Kategori",
-    "tags": ["etiket1", "etiket2"]
-  }
-}
-```
+#### Dinamik İmza Formatı
+- **1 İmzacı**: Merkezi hizalama
+- **2 İmzacı**: Yan yana, eşit aralık
+- **3 İmzacı**: Üçlü düzen, merkezi
+- **4+ İmzacı**: Çoklu satır düzeni
 
-### Stil Seçenekleri
-
-#### 1. Professional (Profesyonel)
-- Resmi dil kullanımı
-- Kibar ve saygılı ton
-- İş dünyası terminolojisi
-
-#### 2. Casual (Günlük)
-- Samimi dil kullanımı
-- Konuşma diline yakın
-- Daha rahat ifadeler
-
-#### 3. Academic (Akademik)
-- Bilimsel terminoloji
-- Nesnel ve analitik dil
-- Referans kullanımı
-
-#### 4. Creative (Yaratıcı)
-- Sanatsal ifadeler
-- Metaforlar ve benzetmeler
-- Duygusal dil
+#### Hizalama Özellikleri
+- İsim ve ünvan merkezi hizalama
+- Sayfa genelinde merkezi konumlandırma
+- Dinamik boşluk hesaplama
+- Profesyonel görünüm
 
 ## 📁 Dosya Yapısı
 
 ```
 template-rewrite/
-├── app.py              # Ana FastAPI uygulaması
-├── requirements.txt    # Python bağımlılıkları
-├── Dockerfile         # Container tanımı
-├── README.md          # Bu dosya
-├── templates/         # Şablon dosyaları
-│   ├── formal_letter.txt
-│   ├── email.txt
-│   ├── report.txt
-│   └── blog_post.txt
-└── styles/            # Stil tanımları
-    ├── professional.py
-    ├── casual.py
-    ├── academic.py
-    └── creative.py
+├── app.py                    # Ana FastAPI uygulaması
+├── requirements.txt          # Python bağımlılıkları
+├── Dockerfile               # Container tanımı
+├── README.md                # Bu dosya
+├── templates/               # Şablon klasörü
+│   └── gerekceler/         # Gerekçe şablonları
+│       ├── *.docx          # Word şablon dosyaları
+│       └── *.json          # JSON şablon dosyaları (opsiyonel)
+└── test_template_rewrite.json  # Test verisi
 ```
 
 ## 🎯 Kullanım Örnekleri
 
-### Resmi Mektup Oluşturma
+### Temel Gerekçe Oluşturma
 ```bash
-curl -X POST http://localhost:8005/rewrite \
+curl -X POST http://localhost:8005/generate-gerekce \
   -H "Content-Type: application/json" \
   -d '{
-    "text": "Projenin durumu hakkında bilgi vermek istiyorum.",
-    "template": "formal_letter",
-    "variables": {
-      "recipient": "Sayın Proje Müdürü",
-      "sender": "Mehmet Öz",
-      "date": "2024-01-20",
-      "subject": "Proje Durum Raporu"
-    },
-    "style": "professional"
-  }'
-```
-
-### E-posta Formatı
-```bash
-curl -X POST http://localhost:8005/rewrite \
-  -H "Content-Type: application/json" \
-  -d '{
-    "text": "Toplantı zamanını değiştirmemiz gerekiyor.",
-    "template": "email",
-    "variables": {
-      "to": "team@company.com",
-      "from": "manager@company.com", 
-      "subject": "Toplantı Saati Değişikliği"
-    },
-    "style": "professional"
+    "konu": "Yapay Zeka Eğitim Programı Gerekçesi",
+    "icerik_konusu": "Personelin yapay zeka konularında eğitilmesi için gerekli gerekçe...",
+    "imza_atacaklar": [
+      {
+        "isim": "Dr. Mehmet Öz",
+        "unvan": "Genel Müdür"
+      },
+      {
+        "isim": "Ayşe Yılmaz",
+        "unvan": "İnsan Kaynakları Müdürü"
+      }
+    ]
   }'
 ```
 
@@ -189,62 +135,57 @@ curl -X POST http://localhost:8005/rewrite \
 ```python
 import requests
 
-# Metin yeniden yazma
-response = requests.post('http://localhost:8005/rewrite', 
+# Gerekçe belgesi oluşturma
+response = requests.post('http://localhost:8005/generate-gerekce', 
     json={
-        'text': 'Bu raporu hazırladım. İncelemenizi rica ederim.',
-        'template': 'report',
-        'variables': {
-            'title': 'Aylık Satış Raporu',
-            'author': 'Ayşe Yılmaz',
-            'date': '2024-01-20',
-            'department': 'Satış Departmanı'
-        },
-        'style': 'professional'
+        'konu': 'Sıfır Atık Projesi Uygulama Gerekçesi',
+        'icerik_konusu': 'Çevre koruma ve sürdürülebilirlik için...',
+        'imza_atacaklar': [
+            {
+                'isim': 'Ali Veli',
+                'unvan': 'Çevre Mühendisi'
+            }
+        ]
     }
 )
 
 result = response.json()
-print(f"Orijinal: {result['original_text']}")
-print(f"Yeniden yazılmış: {result['rewritten_text']}")
+if result['success']:
+    print(f"Belge oluşturuldu: {result['filename']}")
+    print(f"Dosya yolu: {result['file_path']}")
 ```
 
-### Toplu Şablon İşleme
+### Toplu Belge Oluşturma
 ```python
-templates = [
+gerekceler = [
     {
-        'text': 'Özgeçmişimi güncelledim.',
-        'template': 'formal_letter',
-        'style': 'professional'
+        'konu': 'Eğitim Programı Gerekçesi',
+        'icerik_konusu': 'Personel eğitimi için...',
+        'imza_atacaklar': [{'isim': 'Eğitim Müdürü', 'unvan': 'Müdür'}]
     },
     {
-        'text': 'Blog yazısı hazırladım.',
-        'template': 'blog_post', 
-        'style': 'creative'
-    },
-    {
-        'text': 'Araştırma sonuçları hazır.',
-        'template': 'report',
-        'style': 'academic'
+        'konu': 'Teknoloji Alımı Gerekçesi', 
+        'icerik_konusu': 'Yeni sistem alımı için...',
+        'imza_atacaklar': [{'isim': 'IT Müdürü', 'unvan': 'Müdür'}]
     }
 ]
 
-for template_data in templates:
-    response = requests.post('http://localhost:8005/rewrite',
-                           json=template_data)
+for gerekce in gerekceler:
+    response = requests.post('http://localhost:8005/generate-gerekce',
+                           json=gerekce)
     result = response.json()
-    print(f"Şablon: {result['template_used']}")
-    print(f"Sonuç: {result['rewritten_text']}\n")
+    print(f"Oluşturulan: {result['filename']}")
 ```
 
 ## 🔧 Kurulum ve Çalıştırma
 
 ### Docker ile (Önerilen)
 ```bash
-docker run -p 8005:8000 \
-  -v ./templates:/app/templates \
-  -v ./styles:/app/styles \
-  template-rewrite:latest
+# Servisi başlat
+docker compose up template-rewrite -d
+
+# Sağlık kontrolü
+curl http://localhost:8005/health
 ```
 
 ### Yerel Geliştirme
@@ -252,110 +193,122 @@ docker run -p 8005:8000 \
 # Bağımlılıkları yükle
 pip install -r requirements.txt
 
-# Şablon klasörlerini oluştur
-mkdir -p templates styles
+# Ollama servisinin çalıştığından emin ol
+curl http://localhost:11434/api/tags
 
 # Uygulamayı çalıştır
-python -m uvicorn app:app --host 0.0.0.0 --port 8005
+python app.py
 ```
 
-## 🎨 Özel Şablon Oluşturma
+### Şablon Ekleme
+```bash
+# Word dosyasını şablon klasörüne kopyala
+cp yeni_gerekce.docx templates/gerekceler/
+
+# Servisi yeniden başlat (otomatik yükleme)
+docker compose restart template-rewrite
+```
+
+## 🎨 Özelleştirme
 
 ### Yeni Şablon Ekleme
+1. Word dosyasını `templates/gerekceler/` klasörüne ekle
+2. Servis otomatik olarak yükler
+3. LLM bu şablonu referans alarak benzer içerik üretir
+
+### İmza Formatını Değiştirme
+`app.py` dosyasındaki `format_signatures` fonksiyonunu düzenle:
+
 ```python
-# templates/custom_template.txt
-"""
-{header}
-
-Sayın {recipient},
-
-{content}
-
-{footer}
-
-Saygılarımla,
-{sender}
-{date}
-"""
-
-# Şablonu kaydetme
-def create_custom_template():
-    template = {
-        'name': 'custom_template',
-        'variables': ['header', 'recipient', 'content', 'footer', 'sender', 'date'],
-        'description': 'Özel kullanım için şablon'
-    }
-    return template
+def format_signatures(imza_atacaklar: List[ImzaKisi]) -> List[str]:
+    """İmzaları formatla - özelleştirilebilir"""
+    
+    if len(imza_atacaklar) == 1:
+        # Tek imzacı - merkezi
+        return [
+            f"{'':^50}",
+            f"{imza_atacaklar[0].isim:^50}",
+            f"{imza_atacaklar[0].unvan:^50}",
+            f"{'':^50}"
+        ]
+    # Diğer formatlar...
 ```
 
-### Yeni Stil Tanımlama
+### LLM Prompt Özelleştirme
+`generate_gerekce_content` fonksiyonundaki prompt'u düzenle:
+
 ```python
-# styles/custom_style.py
-def apply_custom_style(text):
-    """Özel stil uygula"""
-    
-    # Büyük harfle başlat
-    text = text.capitalize()
-    
-    # Kibar ifadeler ekle
-    polite_phrases = [
-        "Lütfen", "Rica ederim", "Teşekkür ederim",
-        "Saygılarımla", "İyi günler"
-    ]
-    
-    # Stil kuralları uygula
-    styled_text = apply_style_rules(text, polite_phrases)
-    
-    return styled_text
+prompt = f"""
+Gerekçe belgesi oluştur:
+
+Mevcut Konu: {konu}
+İçerik Konusu: {icerik_konusu}
+
+# Özel talimatlar buraya eklenebilir
+- Resmi dil kullan
+- Teknik detayları ekle
+- Hukuki gerekçeleri belirt
+"""
 ```
 
 ## 🐛 Sorun Giderme
 
-### Şablon Bulunamadı Hatası
+### Ollama Bağlantı Hatası
 ```bash
-# Şablon dosyasının var olduğunu kontrol et
-ls -la templates/
+# Ollama servisini kontrol et
+curl http://localhost:11434/api/tags
 
-# Şablon ismini kontrol et
-curl http://localhost:8005/templates  # Mevcut şablonları listele
+# Docker network ayarlarını kontrol et
+docker compose logs template-rewrite
 ```
 
-### Değişken Hatası
+### Word Dosyası Okuma Hatası
 ```bash
-# Gerekli değişkenleri kontrol et
-{
-  "error": "Missing required variable: recipient",
-  "required_variables": ["recipient", "sender", "date"]
-}
+# Şablon dosyalarını kontrol et
+ls -la templates/gerekceler/
+
+# Dosya izinlerini kontrol et
+chmod 644 templates/gerekceler/*.docx
 ```
 
-### Port Çakışması
+### İmza Hizalama Sorunu
+- İsim ve ünvan uzunluklarını kontrol et
+- `format_signatures` fonksiyonunu düzenle
+- Test ederek görsel kontrol yap
+
+### Model Yükleme Hatası
 ```bash
-# Farklı port kullan
-uvicorn app:app --host 0.0.0.0 --port 8015
+# Ollama modelini kontrol et
+ollama list
+
+# Modeli indir
+ollama pull gemma3:27b
 ```
 
 ## 📊 Performans
 
 ### İşlem Süreleri
-- **Basit şablon**: ~0.1-0.5 saniye
-- **Karmaşık şablon**: ~0.5-2 saniye
-- **Çoklu değişken**: ~1-3 saniye
+- **Şablon yükleme**: ~0.1-0.5 saniye
+- **LLM içerik üretimi**: ~5-15 saniye
+- **Word belgesi oluşturma**: ~0.5-1 saniye
+- **Toplam süre**: ~6-17 saniye
 
 ### Memory Kullanımı
-- **Temel işlem**: ~50-100MB
-- **Çoklu şablon**: ~100-200MB
+- **Temel işlem**: ~200-300MB
+- **Çoklu şablon**: ~300-500MB
+- **LLM model**: ~8-16GB (Ollama)
 
 ## 🔮 Gelecek Özellikler
 
-- [ ] AI destekli şablon üretimi
-- [ ] Görsel şablon editörü
+- [x] Word şablon desteği
+- [x] Dinamik imza yönetimi
+- [x] Otomatik başlık üretimi
+- [ ] PDF çıktı desteği
+- [ ] Çoklu dil desteği
 - [ ] Şablon versiyonlama
-- [ ] Conditional template logic
-- [ ] Multi-language template support
+- [ ] Batch işleme
 - [ ] Template validation
-- [ ] Batch template processing
-- [ ] Template marketplace
+- [ ] Görsel şablon editörü
 
 ## 📄 Lisans
 
@@ -364,47 +317,41 @@ Bu proje MIT lisansı altında lisanslanmıştır.
 ## 🤝 Katkıda Bulunma
 
 1. Fork yapın
-2. Feature branch oluşturun
-3. Değişikliklerinizi commit edin
-4. Pull request gönderin
+2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
+3. Değişikliklerinizi commit edin (`git commit -m 'Add amazing feature'`)
+4. Branch'inizi push edin (`git push origin feature/amazing-feature`)
+5. Pull Request oluşturun
 
 ## 📚 Örnek Şablonlar
 
-### İş Mektubu
+### Gerekçe Belgesi Yapısı
 ```
-Tarih: {date}
+[BAŞLIK - Dinamik olarak üretilir]
 
-Sayın {recipient},
+[TARİH - Otomatik eklenir]
 
-Konu: {subject}
+[İÇERİK - LLM tarafından üretilir]
+- Giriş paragrafı
+- Mevcut durum analizi  
+- İhtiyaç ve gerekçe
+- Beklenen faydalar
+- Sonuç ve öneri
 
-{content}
-
-Bu konudaki görüşlerinizi almak üzere size yazıyorum.
-
-Saygılarımla,
-{sender}
-{title}
-{company}
+[İMZA ALANI - Dinamik format]
+[İsim 1]          [İsim 2]          [İsim 3]
+[Ünvan 1]         [Ünvan 2]         [Ünvan 3]
 ```
 
-### Proje Raporu
-```
-PROJE RAPORU
-
-Proje Adı: {project_name}
-Hazırlayan: {author}
-Tarih: {date}
-Departman: {department}
-
-1. ÖZET
-{summary}
-
-2. DETAYLAR
-{content}
-
-3. SONUÇ VE ÖNERİLER
-{conclusion}
-
-Raporu Hazırlayan: {author}
+### Test Verisi
+```json
+{
+  "konu": "Test Gerekçesi",
+  "icerik_konusu": "Bu bir test gerekçesidir. Sistemin çalışıp çalışmadığını kontrol etmek için kullanılır.",
+  "imza_atacaklar": [
+    {
+      "isim": "Test Kullanıcı",
+      "unvan": "Test Müdürü"
+    }
+  ]
+}
 ```

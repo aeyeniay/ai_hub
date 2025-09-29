@@ -44,26 +44,96 @@ def call_llm_for_pii_detection(text: str, model: str = "gemma3:27b") -> List[Dic
   ]
 }}
 
+GÖREV: Metindeki TÜM kişisel bilgileri bul ve listele. Sadece isim değil, şunları da bul:
+- Cinsiyet: "kadın", "erkek", "kadın olarak"
+- Medeni hal: "evli", "bekar", "eşi", "çocuk"
+- Sağlık: "astım", "hastalık", "sağlık", "muayene"
+- Biyometrik: "parmak izi", "fotoğraf", "ses", "video"
+- Sosyal: "sendika", "dernek", "vakıf", "üye"
+- Hobiler: "yüzme", "fotoğrafçılık", "spor"
+- Belgeler: "özgeçmiş", "rapor", "değerlendirme"
+
 Tespit edilecek PII türleri:
-- PERSON: İsim ve soyisim
-- BIRTH_DATE: Doğum tarihi/yılı
-- BIRTH_PLACE: Doğum yeri
-- ADDRESS: Adres bilgileri
-- ID_NUMBER: T.C. Kimlik numarası
-- PASSPORT: Pasaport numarası
-- DRIVER_LICENSE: Sürücü belgesi numarası
-- TAX_NUMBER: Vergi numarası
-- IBAN: IBAN numarası
-- CREDIT_CARD: Kredi kartı numarası
-- PHONE: Telefon numarası
-- EMAIL: E-posta adresi
-- IP_ADDRESS: IP adresi
-- MAC_ADDRESS: MAC adresi
-- IMEI: IMEI numarası
-- LICENSE_PLATE: Araç plakası
-- GPS_COORDINATES: GPS koordinatları
+Kimlik & Nüfus:
+- PERSON — Ad/Soyad: "Mehmet Ali Öz"
+- BIRTH_DATE — Doğum tarihi/yılı: “12.03.1990”, “1990”
+- BIRTH_PLACE — Doğum yeri: “Ankara/Çankaya”
+- ID_NUMBER — T.C. Kimlik No: “11 haneli TC”
+- MOTHER_MAIDEN_NAME — Anne kızlık soyadı (varsa)
+- SIGNATURE — Islak/elektronik imza (metinle ifade edilmişse)
+İletişim & Adres:
+- ADDRESS — Açık adres / posta: “İnönü Mah. ... No:12/5”
+- ZIP_CODE — Posta Kodu: “34000”
+- PHONE — Telefon/GSM: “+90 5xx xxx xx xx”
+- EMAIL — E-posta: “ad.soyad@...”
+- SOCIAL_HANDLE — Sosyal hesap adı/kullanıcı adı (varsa)
+Finans & Kimlik Doğrulama:
+- CREDIT_CARD — Kredi kartı numarası/PAN
+- IBAN — TR ile başlayan IBAN
+- BANK_ACCOUNT — Banka hesap numarası (IBAN dışı)
+- TAX_NUMBER — Vergi no
+- SSN — Sosyal güvenlik numarası (SGK no eşleniği/SSN)
+- FINANCIAL_DOC — Fatura, dekont, ekstre gibi belge numaraları
+Resmi Belge & Numaralar:
+- PASSPORT — Pasaport no
+- DRIVER_LICENSE — Sürücü belgesi no
+- LICENSE_PLATE — Araç plakası
+- STUDENT_EMPLOYEE_ID — Öğrenci/çalışan/müşteri numaraları (kurumsal ID)
+- OTHER_ID — Diğer kimlikleyiciler (bilet no, başvuru no vb.)
+Biyometrik, Görsel-İşitsel:
+- BIOMETRIC — Parmak izi, yüz/iris verisi, biyometrik şablonlar
+- PHOTO — Fotoğraf (kişiyi tanımlayan görsel)
+- VIDEO — Görüntü kayıtları
+- AUDIO — Ses kayıtları
+Sağlık & Özel Nitelikli:
+- HEALTH — Sağlık verisi/rapor, hastalık öyküsü, engellilik bilgisi, astım, alerji, operasyon, muayene
+- GENETIC — Genetik veriler, kalıtsal hastalıklar
+- SEX_LIFE — Cinsel hayat/cinsel yönelim, cinsel tercihler
+- CRIMINAL_CONVICTION — Ceza mahkûmiyeti ve güvenlik tedbirleri, suç geçmişi
+- BIOMETRIC — Parmak izi, yüz tanıma, iris, ses tanıma, DNA, biyometrik şablonlar
+- PHOTO — Fotoğraf, görsel tanımlama, kimlik fotoğrafı, profil resmi
+- VIDEO — Görüntü kayıtları, kamera kayıtları, video tanımlama
+- AUDIO — Ses kayıtları, ses tanıma, telefon kayıtları
+İnanç, Görüş, Aidiyet (Özel Nitelikli):
+- RACE_ETHNICITY — Irk/etnik köken
+- RELIGION_SECT — Din/mezhep/diğer inançlar
+- POLITICAL_OPINION — Siyasi düşünce
+- PHILOSOPHICAL_BELIEF — Felsefi inanç
+- UNION_ASSOC_MEMBERSHIP — Dernek/vakıf/sendika üyeliği
+- CLOTHING — Kılık ve kıyafet (inanç/aidiyeti ifşa eden)
+Konum & Ağ:
+- IP_ADDRESS — IP
+- MAC_ADDRESS — MAC
+- IMEI — IMEI
+- GPS_COORDINATES — Enlem/boylam
+- DEVICE_ID — Cihaz/advertising ID (IDFA/GAID vb.)
+Demografi & Tercihler:
+- GENDER — Cinsiyet, kadın/erkek, cinsiyet kimliği
+- MARITAL_STATUS — Medeni hâl, evli/bekar/boşanmış, eş durumu, çocuk durumu
+- HOBBIES_PREFERENCES — Hobiler/tercihler, spor, sanat, müzik, fotoğrafçılık, yüzme
+- AFFILIATIONS — Grup üyelikleri, sendika, dernek, vakıf, kulüp, topluluk
+- FAMILY — Aile birey bilgileri, eş, çocuk, anne, baba, kardeş
+Belgeler & İçerikler:
+- CV_RESUME — Özgeçmiş, CV, resume, başvuru belgesi
+- OFFICIAL_DOC — Nüfus cüzdanı fotokopileri, kimlik belgeleri
+- REPORT — Müşteri şikâyet/performans/mülakat değerlendirme raporları, değerlendirme
+- LETTER — Mektup/davet yazıları, yazışmalar, bildirimler
+
+
 
 Metin: {text}
+
+ÖNEMLİ: Metni dikkatli oku ve şu bilgileri bul:
+1. İsimler (PERSON)
+2. Cinsiyet bilgileri (GENDER): "kadın", "erkek"
+3. Aile durumu (MARITAL_STATUS): "evli", "eşi", "çocuk"
+4. Sağlık bilgileri (HEALTH): "astım", "hastalık", "sağlık"
+5. Biyometrik veriler (BIOMETRIC): "parmak izi", "fotoğraf", "ses", "video"
+6. Sosyal üyelikler (AFFILIATIONS): "sendika", "dernek", "vakıf"
+7. Hobiler (HOBBIES_PREFERENCES): "yüzme", "fotoğrafçılık"
+8. Belgeler (CV_RESUME, REPORT): "özgeçmiş", "rapor"
+
+ÖRNEK: "kadın olarak beyanlıdır" → GENDER: "kadın"
 
 Sadece JSON formatında yanıt ver, başka açıklama ekleme:"""
 
@@ -81,9 +151,14 @@ Sadece JSON formatında yanıt ver, başka açıklama ekleme:"""
             timeout=30
         )
         
+        print(f"🔍 HTTP Status: {response.status_code}")
         if response.status_code == 200:
             result = response.json()
             llm_response = result.get("response", "")
+            
+            # Debug: Print raw LLM response
+            print(f"🔍 Raw LLM Response: {llm_response}")
+            print(f"🔍 Response length: {len(llm_response)}")
             
             # Extract JSON from LLM response
             try:
@@ -100,11 +175,14 @@ Sadece JSON formatında yanıt ver, başka açıklama ekleme:"""
             # Fallback: parse the response manually
             return parse_llm_response_manually(llm_response, text)
         else:
-            print(f"LLM API error: {response.status_code}")
+            print(f"❌ LLM API error: {response.status_code}")
+            print(f"❌ Response text: {response.text}")
             return []
             
     except Exception as e:
-        print(f"Error calling LLM: {e}")
+        print(f"❌ Error calling LLM: {e}")
+        import traceback
+        traceback.print_exc()
         return []
 
 def parse_llm_response_manually(response: str, original_text: str) -> List[Dict[str, Any]]:

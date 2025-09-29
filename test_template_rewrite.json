@@ -1,0 +1,24 @@
+{
+  "konu": "Sıfır Atık Projesi Uygulama Gerekçesi",
+  "icerik_konusu": "Yapay Zeka ve Yenilikçi Teknolojiler Daire Başkanlığı tarafından, 2026 yılı için personelin görev ve hizmet alanlarımızla ilişkili güncel teknolojilerde bilgi ve becerisini geliştirmeye yönelik bir eğitim programı hazırlanmıştır. Program, Bakanlığımızın mevzuatla belirlenmiş sorumlulukları (imar ve yapı işleri, mekânsal planlama, çevresel izleme-izin-denetim, kentsel dönüşüm, ulusal coğrafi bilgi sistemleri, kamu taşınmazlarının yönetimi ile yerel yönetimlere teknik destek vb.) kapsamında yürütülen iş ve işlemlerin daha etkin, hızlı ve güvenilir biçimde yerine getirilmesine katkı sağlamayı hedeflemektedir.
+
+Eğitim içerikleri; büyük veri yönetimi ve analitiği, coğrafi/mekânsal verilerin yapay zekâ destekli işlenmesi ve görselleştirilmesi, yapay zekâ uygulamalarında güvenlik ve etik standartlar, doğal dil işleme ve doküman analizi, bilgisayarlı görü ve uzaktan algılama (uydu/görüntü verisi), makine öğrenmesi operasyonları (MLOps) ve yapay zekâ sistem mimarisi, üretken yapay zekâ ve metin/rapor üretim otomasyonu, yazılım geliştirme ve entegrasyon başlıklarını kapsamaktadır. Bu kapsamda, çevresel izleme ve denetim süreçlerinde veri kalitesinin artırılması; plan, proje ve ruhsat süreçlerinde karar destek mekanizmalarının güçlendirilmesi; mekânsal planlama ve imar uygulamalarında Ulusal Coğrafi Bilgi Sistemi ile uyumlu veri üretimi; kentsel dönüşüm ve afet odaklı risk analizlerinin iyileştirilmesi; ayrıca kurumsal yazışma, raporlama ve arşiv işlerinde metin-odaklı otomasyonun yaygınlaştırılması hedeflenmektedir.
+
+Programın uygulanmasıyla; (i) proje ve izin süreçlerinde işlem sürelerinin kısalması, (ii) denetim ve raporlama çıktılarında tutarlılık ve izlenebilirliğin artması, (iii) mekânsal ve çevresel verilerde birlikte çalışabilirlik ve standartlara uygunluğun güçlenmesi, (iv) iç hizmetlerde verimlilik ve kurumsal bilgi yönetiminde sürekliliğin sağlanması, (v) yapay zekâ uygulamalarında güvenlik, kişisel verilerin korunması ve etik ilkelere riayetin kurumsal düzeyde yerleşmesi beklenmektedir. Bu kazanımların, vatandaş odaklı hizmet kalitesine ve kurumsal risk yönetimine olumlu yansıması öngörülmektedir.
+Sonuç itibarıyla, söz konusu eğitim programının uygulanması; Bakanlığımızın görev ve hizmet alanlarında teknolojik güncelliğin korunmasına, veri temelli karar süreçlerinin güçlendirilmesine ve kurumsal kapasitenin sürdürülebilir biçimde geliştirilmesine katkı sağlayacaktır. 
+",
+          "imza_atacaklar": [
+            {
+              "isim": "Dr. Mehmet Öz",
+              "unvan": "Genel Müdür"
+            },
+            {
+              "isim": "Ayşe Yılmaz",
+              "unvan": "İnsan Kaynakları Müdürü"
+            },
+            {
+              "isim": "Ali Veli",
+              "unvan": "Mühendis"
+            }
+          ]
+}
