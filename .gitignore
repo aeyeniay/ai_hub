@@ -66,3 +66,17 @@ services/*/quiz_sessions/
 # Temporary files
 *.tmp
 *.temp
+
+# Gizli kurum belgeleri - GitHub'a push edilmemeli
+services/text/template-rewrite/templates/gerekceler/*.docx
+services/text/template-rewrite/templates/gerekceler/*.pdf
+services/text/template-rewrite/templates/gerekceler/*.doc
+**/gerekceler/**/*.docx
+**/gerekceler/**/*.pdf
+**/gerekceler/**/*.doc
+
+# Hassas belgeler
+**/sensitive/
+**/confidential/
+**/private/
+**/internal/
