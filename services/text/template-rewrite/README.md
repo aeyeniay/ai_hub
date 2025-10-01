@@ -1,13 +1,14 @@
-# 📝 Template-Rewrite Servisi - Gerekçe Belgesi Oluşturma
+# 📝 Template-Rewrite Servisi - Belge Oluşturma
 
-Bu servis, Word şablonlarını kullanarak dinamik gerekçe belgeleri oluşturmak için tasarlanmıştır. Ollama LLM modeli ile içerik üretimi yapar ve Word formatında çıktı verir.
+Bu servis, Word şablonlarını kullanarak dinamik belgeler oluşturmak için tasarlanmıştır. Ollama LLM modeli ile içerik üretimi yapar ve Word formatında çıktı verir. Hem Gerekçe hem de Belgenet formatlarında belge üretebilir.
 
 ## 🚀 Özellikler
 
+- **Çoklu Format Desteği**: Gerekçe ve Belgenet formatlarında belge oluşturma
 - **Word Şablon Desteği**: Mevcut Word dosyalarını şablon olarak kullanma
 - **Dinamik İçerik Üretimi**: Ollama LLM ile akıllı içerik oluşturma
 - **Otomatik Başlık**: İçeriğe göre dinamik başlık üretimi
-- **Dinamik İmza Yönetimi**: Değişken sayıda imzacı desteği
+- **Dinamik İmza Yönetimi**: Değişken sayıda imzacı desteği (Gerekçe formatında)
 - **Merkezi Hizalama**: İmzaları otomatik ortalama
 - **Word Çıktısı**: .docx formatında profesyonel belgeler
 - **Şablon Öğrenme**: Mevcut belgelerden öğrenerek benzer yapıda içerik üretme
@@ -16,24 +17,25 @@ Bu servis, Word şablonlarını kullanarak dinamik gerekçe belgeleri oluşturma
 
 ### API Endpoints
 
-#### 1. Gerekçe Belgesi Oluşturma
+#### 1. Belge Oluşturma (Gerekçe veya Belgenet)
 ```http
-POST /generate-gerekce
+POST /generate-document
 Content-Type: application/json
 
 {
   "konu": "Sıfır Atık Projesi Uygulama Gerekçesi",
   "icerik_konusu": "Detaylı açıklama metni buraya gelir...",
-        "imza_atacaklar": [
-          {
-            "isim": "Dr. Mehmet Öz",
-            "unvan": "Genel Müdür"
-          },
-          {
-            "isim": "Ayşe Yılmaz", 
-            "unvan": "İnsan Kaynakları Müdürü"
-          }
-        ]
+  "imza_atacaklar": [
+    {
+      "isim": "Dr. Can Yılmaz",
+      "unvan": "Genel Müdür"
+    },
+    {
+      "isim": "Elif Demir", 
+      "unvan": "İnsan Kaynakları Müdürü"
+    }
+  ],
+  "format_type": "gerekce"  // "gerekce" veya "belgenet"
 }
 ```
 
@@ -111,23 +113,36 @@ template-rewrite/
 
 ## 🎯 Kullanım Örnekleri
 
-### Temel Gerekçe Oluşturma
+### Gerekçe Belgesi Oluşturma
 ```bash
-curl -X POST http://localhost:8005/generate-gerekce \
+curl -X POST http://localhost:8005/generate-document \
   -H "Content-Type: application/json" \
   -d '{
     "konu": "Yapay Zeka Eğitim Programı Gerekçesi",
     "icerik_konusu": "Personelin yapay zeka konularında eğitilmesi için gerekli gerekçe...",
     "imza_atacaklar": [
       {
-        "isim": "Dr. Mehmet Öz",
+        "isim": "Dr. Can Yılmaz",
         "unvan": "Genel Müdür"
       },
       {
-        "isim": "Ayşe Yılmaz",
+        "isim": "Elif Demir",
         "unvan": "İnsan Kaynakları Müdürü"
       }
-    ]
+    ],
+    "format_type": "gerekce"
+  }'
+```
+
+### Belgenet Evrakı Oluşturma
+```bash
+curl -X POST http://localhost:8005/generate-document \
+  -H "Content-Type: application/json" \
+  -d '{
+    "konu": "Kurumların İngilizce Karşılıklarının Bildirilmesi",
+    "icerik_konusu": "Kurumların ve içinde barındırdıkları genel müdürlük, daire başkanlıkları, şube müdürlüklerinin İngilizce karşılıklarının 6 Ekim 2025 tarihi mesai saati bitimine kadar Dışişleri Bakanlığı Dış İlişkiler Genel Müdürlüğüne bildirilmesi hakkında.",
+    "imza_atacaklar": [],
+    "format_type": "belgenet"
   }'
 ```
 
@@ -142,7 +157,7 @@ response = requests.post('http://localhost:8005/generate-gerekce',
         'icerik_konusu': 'Çevre koruma ve sürdürülebilirlik için...',
         'imza_atacaklar': [
             {
-                'isim': 'Ali Veli',
+                'isim': 'Burak Kaya',
                 'unvan': 'Çevre Mühendisi'
             }
         ]

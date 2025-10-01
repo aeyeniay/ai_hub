@@ -75,6 +75,14 @@ services/text/template-rewrite/templates/gerekceler/*.doc
 **/gerekceler/**/*.pdf
 **/gerekceler/**/*.doc
 
+# Belgenet evrak belgeleri - GitHub'a push edilmemeli
+services/text/belgenet/templates/belgenet/*.docx
+services/text/belgenet/templates/belgenet/*.pdf
+services/text/belgenet/templates/belgenet/*.doc
+**/belgenet/**/*.docx
+**/belgenet/**/*.pdf
+**/belgenet/**/*.doc
+
 # Hassas belgeler
 **/sensitive/
 **/confidential/

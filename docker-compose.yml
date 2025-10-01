@@ -82,7 +82,6 @@ services:
       - ./data/outputs/text:/app/outputs
       - ./services/text/template-rewrite/templates:/app/templates
 
-
 # Nginx geçici olarak kapatıldı
   # nginx:
   #   image: nginx:alpine

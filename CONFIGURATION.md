@@ -197,7 +197,7 @@ MODEL_NAME=gemma3:27b
 curl http://localhost:8005/health
 
 # Gerekçe belgesi oluşturma testi
-curl -X POST http://localhost:8005/generate-gerekce \
+curl -X POST http://localhost:8005/generate-document \
   -H "Content-Type: application/json" \
   -d '{
     "konu": "Test Gerekçesi",
@@ -207,7 +207,18 @@ curl -X POST http://localhost:8005/generate-gerekce \
         "isim": "Test Kullanıcı",
         "unvan": "Test Müdürü"
       }
-    ]
+    ],
+    "format_type": "gerekce"
+  }'
+
+# Belgenet evrakı oluşturma testi
+curl -X POST http://localhost:8005/generate-document \
+  -H "Content-Type: application/json" \
+  -d '{
+    "konu": "Test Belgenet",
+    "icerik_konusu": "Bu bir test belgenet evrakıdır.",
+    "imza_atacaklar": [],
+    "format_type": "belgenet"
   }'
 ```
 
@@ -215,9 +226,11 @@ curl -X POST http://localhost:8005/generate-gerekce \
 ```bash
 # Şablon dosyalarını kontrol et
 ls -la services/text/template-rewrite/templates/gerekceler/
+ls -la services/text/template-rewrite/templates/belgenet/
 
 # Yeni Word şablonu ekle
-cp yeni_sablon.docx services/text/template-rewrite/templates/gerekceler/
+cp yeni_gerekce.docx services/text/template-rewrite/templates/gerekceler/
+cp yeni_belgenet.docx services/text/template-rewrite/templates/belgenet/
 
 # Servisi yeniden başlat (otomatik yükleme)
 docker compose restart template-rewrite

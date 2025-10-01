@@ -12,7 +12,7 @@ Bu proje, görsel üretim, nesne tespiti ve görselden soru-cevap servislerini i
 ### 📝 Metin Servisleri
 - **pii-masking** (Port 8000): Gemma3:27b ile kişisel bilgi maskeleme (Ollama üzerinden)
 - **quiz-generator** (Port 8006): Gemma3:27b ile interaktif quiz oluşturma ve oynama (Ollama üzerinden)
-- **template-rewrite** (Port 8005): Word şablonları ile gerekçe belgesi oluşturma (Ollama üzerinden)
+- **template-rewrite** (Port 8005): Word şablonları ile belge oluşturma - Gerekçe ve Belgenet formatları (Ollama üzerinden)
 
 ## 🖥️ Sistem Gereksinimleri
 
@@ -298,7 +298,8 @@ curl http://localhost:8006/health  # Quiz Generator
 - **Interaktif Oyunlar**: Quiz servisi gerçek zamanlı soru-cevap oyunu sağlar
 - **PII Koruma**: Otomatik kişisel bilgi tespit ve maskeleme
 - **Word Şablon Desteği**: Mevcut Word dosyalarını şablon olarak kullanma
-- **Dinamik Belge Üretimi**: LLM ile akıllı gerekçe belgesi oluşturma
+- **Dinamik Belge Üretimi**: LLM ile akıllı belge oluşturma (Gerekçe ve Belgenet formatları)
+- **Çoklu Format Desteği**: Gerekçe belgeleri (imzalı) ve Belgenet evrakları (imzasız)
 
 ## 🔧 Geliştirme
 

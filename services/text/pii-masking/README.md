@@ -45,7 +45,7 @@ POST /mask-pii
 Content-Type: application/json
 
 {
-  "text": "Arman Sezgin (1984, Van) TCKN: 12345678901, IBAN: TR02 0006 4000 3333 2222 1111 00",
+  "text": "Can Yılmaz (1984, Van) TCKN: 12345678901, IBAN: TR02 0006 4000 3333 2222 1111 00",
   "masking_type": "replace",
   "entities": ["TCKN", "IBAN", "NAME"],
   "model": "gemma3:27b"
@@ -60,7 +60,7 @@ Content-Type: application/json
   "detected_entities": [
     {
       "type": "NAME",
-      "value": "Arman Sezgin",
+      "value": "Can Yılmaz",
       "confidence": 0.95,
       "position": {"start": 0, "end": 12}
     },
@@ -74,7 +74,7 @@ Content-Type: application/json
   "masked_entities": [
     {
       "type": "NAME",
-      "original": "Arman Sezgin",
+      "original": "Can Yılmaz",
       "masked": "[İSİM]",
       "method": "replace"
     }
@@ -106,7 +106,7 @@ GET /health
 ```json
 {
   "masking_type": "replace",
-  "text": "Ahmet Yılmaz TCKN: 12345678901"
+  "text": "Can Yılmaz TCKN: 12345678901"
 }
 // Çıktı: "[İSİM] TCKN: [TCKN]"
 ```
@@ -115,7 +115,7 @@ GET /health
 ```json
 {
   "masking_type": "hash", 
-  "text": "Ahmet Yılmaz TCKN: 12345678901"
+  "text": "Can Yılmaz TCKN: 12345678901"
 }
 // Çıktı: "a1b2c3d4 TCKN: e5f6g7h8"
 ```
@@ -124,7 +124,7 @@ GET /health
 ```json
 {
   "masking_type": "encrypt",
-  "text": "Ahmet Yılmaz TCKN: 12345678901"  
+  "text": "Can Yılmaz TCKN: 12345678901"  
 }
 // Çıktı: "ENC_xyz123 TCKN: ENC_abc789"
 ```
@@ -165,7 +165,7 @@ curl -X POST http://localhost:8000/mask-pii \
 curl -X POST http://localhost:8000/mask-pii \
   -H "Content-Type: application/json" \
   -d '{
-    "text": "Zehra Öztürk cep: +90 530 112 00 45, e-posta: zehra.ozturk@example.net",
+    "text": "Elif Demir cep: +90 530 112 00 45, e-posta: elif.demir@example.net",
     "masking_type": "hash",
     "entities": ["PHONE", "EMAIL"]
   }'
@@ -196,9 +196,9 @@ for entity in result['detected_entities']:
 ### Toplu Metin İşleme
 ```python
 texts = [
-    "Ali Veli, TCKN: 11111111111, Tel: 0555 123 45 67",
-    "Ayşe Fatma, IBAN: TR12 3456 7890 1234 5678 90 12, Email: ayse@example.com",
-    "Mehmet Öz, Pasaport: TN1234567, Adres: Atatürk Cad. No:123 Ankara"
+    "Burak Kaya, TCKN: 11111111111, Tel: 0555 123 45 67",
+    "Elif Demir, IBAN: TR12 3456 7890 1234 5678 90 12, Email: elif@example.com",
+    "Can Yılmaz, Pasaport: TN1234567, Adres: Atatürk Cad. No:123 Ankara"
 ]
 
 for i, text in enumerate(texts):
@@ -331,7 +331,7 @@ CUSTOM_PATTERNS = {
 ### Entity Filtreleme
 ```json
 {
-  "text": "Mehmet Öz, TCKN: 12345, Plaka: 34 ABC 123",
+  "text": "Can Yılmaz, TCKN: 12345, Plaka: 34 ABC 123",
   "entities": ["NAME", "PLAKA"],  // Sadece bunları maskele
   "masking_type": "replace"
 }

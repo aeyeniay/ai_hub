@@ -26,6 +26,12 @@ class GerekceRequest(BaseModel):
     icerik_konusu: str
     imza_atacaklar: List[ImzaKisi]
 
+class BelgenetRequest(BaseModel):
+    konu: str
+    icerik_konusu: str
+    imza_atacaklar: List[ImzaKisi]
+    format_type: str = "belgenet"  # "gerekce" veya "belgenet"
+
 class TemplateResponse(BaseModel):
     success: bool
     message: str
@@ -118,14 +124,50 @@ def parse_gerekce_from_text(text):
         "signatures": signatures
     }
 
+def parse_belgenet_from_text(text: str) -> Dict[str, Any]:
+    """Parse belgenet text into structured format"""
+    try:
+        # Belgenet formatını parse et: Konu: ... İçerik: ... şeklinde
+        documents = []
+        
+        # Metni bölümlere ayır (--- ile ayrılmış)
+        sections = text.split('---')
+        
+        for section in sections:
+            section = section.strip()
+            if not section:
+                continue
+                
+            # Konu ve İçerik kısımlarını bul
+            if 'Konu:' in section and 'İçerik:' in section:
+                konu_part = section.split('Konu:')[1].split('İçerik:')[0].strip()
+                icerik_part = section.split('İçerik:')[1].strip()
+                
+                documents.append({
+                    'konu': konu_part,
+                    'icerik': icerik_part
+                })
+        
+        if documents:
+            return {
+                'title': 'Belgenet Evrak Örneği',
+                'documents': documents
+            }
+        
+        return None
+    except Exception as e:
+        print(f"❌ Belgenet parse hatası: {e}")
+        return None
+
 def load_template_examples():
     """Load template examples from Word and JSON files"""
     examples = []
-    template_dir = "/app/templates/gerekceler"
     
-    if os.path.exists(template_dir):
-        for filename in os.listdir(template_dir):
-            file_path = os.path.join(template_dir, filename)
+    # Gerekçe şablonları
+    gerekceler_dir = "/app/templates/gerekceler"
+    if os.path.exists(gerekceler_dir):
+        for filename in os.listdir(gerekceler_dir):
+            file_path = os.path.join(gerekceler_dir, filename)
             
             if filename.endswith('.json'):
                 try:
@@ -146,7 +188,101 @@ def load_template_examples():
                 except Exception as e:
                     print(f"Error loading Word template {filename}: {e}")
     
+    # Belgenet şablonları
+    belgenet_dir = "/app/templates/belgenet"
+    if os.path.exists(belgenet_dir):
+        for filename in os.listdir(belgenet_dir):
+            file_path = os.path.join(belgenet_dir, filename)
+            
+            if filename.endswith('.json'):
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        example = json.load(f)
+                        examples.append(example)
+                except Exception as e:
+                    print(f"Error loading JSON template {filename}: {e}")
+            
+            elif filename.endswith('.docx'):
+                try:
+                    # Word dosyasını oku ve JSON'a çevir
+                    text = extract_text_from_word(file_path)
+                    if text:
+                        example = parse_belgenet_from_text(text)
+                        examples.append(example)
+                        print(f"Loaded Word template: {filename}")
+                except Exception as e:
+                    print(f"Error loading Word template {filename}: {e}")
+    
     return examples
+
+def generate_belgenet_content(konu: str, icerik_konusu: str) -> tuple:
+    """Generate belgenet content and title using LLM with template examples"""
+    
+    # Örnek şablonları yükle
+    examples = load_template_examples()
+    
+    # Örnekleri prompt'a ekle
+    examples_text = ""
+    if examples:
+        examples_text = "\n\nÖrnek belgenet şablonları:\n"
+        for i, example in enumerate(examples[:2], 1):  # İlk 2 örneği kullan
+            examples_text += f"\nÖrnek {i}:\n"
+            if 'documents' in example:
+                for j, doc in enumerate(example['documents'][:3], 1):  # İlk 3 belge
+                    examples_text += f"  Belge {j}:\n"
+                    examples_text += f"    Konu: {doc.get('konu', '')}\n"
+                    examples_text += f"    İçerik: {doc.get('icerik', '')[:200]}...\n"
+    
+    prompt = f"""
+    Belgenet evrak belgesi oluştur (resmi yazı formatında):
+    
+    Mevcut Konu: {konu}
+    İçerik Konusu: {icerik_konusu}
+    {examples_text}
+    
+    Önce içeriğe uygun yeni bir başlık oluştur, sonra belgenet formatında TEK evrak yaz.
+    
+    Başlık formatı: "YENİ BAŞLIK: [başlık buraya]"
+    Dosya adı formatı: "DOSYA ADI: [2-3 kelimelik kısa isim]"
+    
+    Belgenet evrak formatı (resmi yazı):
+    - Sadece İÇERİK kısmını yaz (Konu: kısmını yazma, zaten var)
+    - Resmi yazı dili kullan ("Bilgilerinizi ve gereğini arz ederim" ile bitir)
+    - Türkçe yaz
+    - Kısa ve öz olsun (2-3 paragraf)
+    - Direkt içeriği yaz, "İçerik:" etiketi kullanma
+    - Sayı, Tarih, Gönderen, Dağıtım gibi metadata'ları YAZMA
+    - Sadece ana içerik paragraflarını yaz
+    
+    Örnek format:
+    [Resmi yazı içeriği - 2-3 paragraf, "Bilgilerinizi ve gereğini arz ederim" ile bitir]
+    """
+    
+    content = call_ollama_for_content(prompt)
+    
+    # Başlık ve dosya adını ayır
+    new_title = konu
+    new_filename = "belgenet"
+    
+    if "YENİ BAŞLIK:" in content:
+        parts = content.split("YENİ BAŞLIK:")
+        if len(parts) >= 2:
+            # Başlık kısmını al ve köşeli parantezleri temizle
+            title_part = parts[1].split('\n')[0].strip()
+            title_part = title_part.replace('[', '').replace(']', '').strip()
+            new_title = title_part
+            content = parts[1].split('\n', 1)[1].strip() if len(parts[1].split('\n')) > 1 else parts[1].strip()
+    
+    if "DOSYA ADI:" in content:
+        parts = content.split("DOSYA ADI:")
+        if len(parts) >= 2:
+            # Dosya adı kısmını al ve köşeli parantezleri temizle
+            filename_part = parts[1].split('\n')[0].strip()
+            filename_part = filename_part.replace('[', '').replace(']', '').strip()
+            new_filename = filename_part
+            content = parts[1].split('\n', 1)[1].strip() if len(parts[1].split('\n')) > 1 else parts[1].strip()
+    
+    return new_title, content, new_filename
 
 def generate_gerekce_content(konu: str, icerik_konusu: str) -> tuple:
     """Generate gerekce content and title using LLM with template examples"""
@@ -243,6 +379,43 @@ def format_signatures(imza_atacaklar: List[ImzaKisi]) -> List[str]:
                 lines.append(f"{imza_atacaklar[i].unvan:^60}")
         return lines
 
+def create_belgenet_word_document(konu: str, content: str, imza_atacaklar: List[ImzaKisi], filename_base: str = "belgenet") -> str:
+    """Create Word document for belgenet - simplified official memo format"""
+    doc = Document()
+    
+    # Konu başlığı (sol üst)
+    konu_para = doc.add_paragraph(f"Konu : {konu}")
+    konu_para.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    
+    # DAĞITIM YERLERİNE (merkezi)
+    dagitim_para = doc.add_paragraph("DAĞITIM YERLERİNE")
+    dagitim_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    dagitim_para.runs[0].bold = True
+    
+    # Boşluk
+    doc.add_paragraph()
+    
+    # İçerik - Belgenet formatında (TEK evrak)
+    # Direkt içerik paragrafları (resmi yazı formatı)
+    for paragraph_text in content.split('\n'):
+        if paragraph_text.strip():
+            para = doc.add_paragraph(paragraph_text.strip())
+            para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+            para.paragraph_format.first_line_indent = Inches(0.5)
+    
+    # İmza alanı YOK - belgenet formatında imza yok
+    
+    # Dosya adı oluştur - LLM'den gelen kısa isim
+    safe_filename = "".join(c for c in filename_base if c.isalnum() or c in (' ', '-', '_')).rstrip()
+    safe_filename = safe_filename.replace(' ', '_')[:30]  # Maksimum 30 karakter
+    filename = f"{safe_filename}_{uuid.uuid4().hex[:8]}.docx"
+    filepath = f"/app/outputs/{filename}"
+    
+    # Kaydet
+    doc.save(filepath)
+    
+    return filepath, filename
+
 def create_gerekce_word_document(konu: str, content: str, imza_atacaklar: List[ImzaKisi], filename_base: str = "gerekce") -> str:
     """Create Word document for gerekce"""
     doc = Document()
@@ -278,6 +451,57 @@ def create_gerekce_word_document(konu: str, content: str, imza_atacaklar: List[I
     doc.save(filepath)
     
     return filepath, filename
+
+@app.post("/generate-document", response_model=TemplateResponse)
+async def generate_document(request: BelgenetRequest):
+    """Generate document (gerekce or belgenet format)"""
+    try:
+        if request.format_type == "belgenet":
+            # Belgenet formatında içerik oluştur
+            title, content, filename_base = generate_belgenet_content(
+                request.konu, 
+                request.icerik_konusu
+            )
+            
+            # Belgenet Word belgesi oluştur
+            filepath, filename = create_belgenet_word_document(
+                title, 
+                content, 
+                request.imza_atacaklar,
+                filename_base
+            )
+            
+            return TemplateResponse(
+                success=True,
+                message="Belgenet evrak belgesi başarıyla oluşturuldu",
+                file_path=filepath,
+                filename=filename
+            )
+        else:
+            # Gerekçe formatında içerik oluştur
+            title, content, filename_base = generate_gerekce_content(
+                request.konu, 
+                request.icerik_konusu
+            )
+            
+            # Gerekçe Word belgesi oluştur
+            filepath, filename = create_gerekce_word_document(
+                title, 
+                content, 
+                request.imza_atacaklar,
+                filename_base
+            )
+            
+            return TemplateResponse(
+                success=True,
+                message="Gerekçe belgesi başarıyla oluşturuldu",
+                file_path=filepath,
+                filename=filename
+            )
+        
+    except Exception as e:
+        print(f"❌ Belge oluşturma hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/generate-gerekce", response_model=TemplateResponse)
 async def generate_gerekce(request: GerekceRequest):
