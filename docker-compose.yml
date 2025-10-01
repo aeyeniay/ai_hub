@@ -82,6 +82,18 @@ services:
       - ./data/outputs/text:/app/outputs
       - ./services/text/template-rewrite/templates:/app/templates
 
+  # Bilgi kartları servisi
+  info-cards:
+    build: ./services/text/info-cards
+    network_mode: "host"
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://127.0.0.1:11434}
+      - MODEL_NAME=${GEMMA_MODEL:-gemma3:27b}
+      - PORT=8008
+    volumes:
+      - ./data/uploads/text:/app/uploads
+      - ./data/outputs/text:/app/outputs
+
 # Nginx geçici olarak kapatıldı
   # nginx:
   #   image: nginx:alpine

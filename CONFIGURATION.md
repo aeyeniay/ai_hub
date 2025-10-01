@@ -55,6 +55,7 @@ DETECT_PORT=8003
 PII_MASKING_PORT=8000
 TEMPLATE_REWRITE_PORT=8005
 QUIZ_GENERATOR_PORT=8006
+INFO_CARDS_PORT=8008
 
 # Port çakışması durumunda değiştirin
 VQA_PORT=9002
@@ -286,6 +287,72 @@ curl -X POST http://localhost:8006/answer \
 ```
 
 ### Quiz Session Yönetimi
+
+## 🃏 Bilgi Kartları Özel Ayarları
+
+### Bilgi Kartları Konfigürasyonu
+```bash
+# Bilgi kartları servisi portu
+INFO_CARDS_PORT=8008
+
+# Ollama bağlantısı
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+MODEL_NAME=gemma3:27b
+
+# Çıktı dosyaları için volume
+./data/outputs/text:/app/outputs
+```
+
+### Bilgi Kartları Test Etme
+```bash
+# Sağlık kontrolü
+curl http://localhost:8008/health
+
+# Bilgi kartları oluşturma testi
+curl -X POST http://localhost:8008/generate-cards \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Test metni buraya...",
+    "card_count": 5
+  }'
+```
+
+### Bilgi Kartları Özellikleri
+```bash
+# Desteklenen kart türleri
+- Tanım kartları (definition)
+- Soru-cevap kartları (question_answer)
+
+# Kart sayısı sınırları
+- Minimum: 1 kart
+- Maksimum: 20 kart
+- Varsayılan: 5 kart
+
+# Performans
+- İşlem süresi: ~10-20 saniye
+- Metin uzunluğu: Sınırsız
+- Model: Gemma3:27b
+```
+
+### Çıktı Formatı
+```json
+{
+  "success": true,
+  "cards": [
+    {
+      "id": 1,
+      "content": "Kart içeriği...",
+      "type": "definition"
+    }
+  ],
+  "metadata": {
+    "total_cards": 5,
+    "processing_time": 15.5,
+    "text_length": 2500,
+    "model": "gemma3:27b"
+  }
+}
+```
 ```bash
 # Session dosyalarını görme
 ls -la data/quiz_sessions/

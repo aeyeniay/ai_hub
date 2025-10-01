@@ -4,7 +4,7 @@ Bu klasör, metin işleme servislerini içerir. Her servis bağımsız olarak ç
 
 ## 📁 Servisler
 
-### 1. PII Masking Service (Port 8004)
+### 1. PII Masking Service (Port 8000)
 **Dosya Yolu**: `pii-masking/`
 **Açıklama**: Kişisel bilgileri (PII) maskeleyen servis
 **Özellikler**:
@@ -14,11 +14,11 @@ Bu klasör, metin işleme servislerini içerir. Her servis bağımsız olarak ç
 
 ### 2. Template Rewrite Service (Port 8005)
 **Dosya Yolu**: `template-rewrite/`
-**Açıklama**: Metinleri şablona göre yeniden yazan servis
+**Açıklama**: Word şablonları ile belge oluşturan servis
 **Özellikler**:
-- Jinja2 template desteği
-- Farklı yazım stilleri (professional, casual, academic, creative)
-- Değişken tabanlı metin üretimi
+- Gerekçe ve Belgenet formatları
+- Dinamik içerik üretimi
+- Word çıktısı (.docx)
 
 ### 3. Quiz Generator Service (Port 8006)
 **Dosya Yolu**: `quiz-generator/`
@@ -27,6 +27,14 @@ Bu klasör, metin işleme servislerini içerir. Her servis bağımsız olarak ç
 - Çoktan seçmeli, doğru/yanlış, boşluk doldurma soruları
 - Zorluk seviyesi ayarlama
 - Konu bazlı filtreleme
+
+### 4. Info Cards Service (Port 8008)
+**Dosya Yolu**: `info-cards/`
+**Açıklama**: Metin analizi ile bilgi kartları üreten servis
+**Özellikler**:
+- Tanım ve soru-cevap kartları
+- Dinamik içerik çıkarımı
+- Öğretici format
 
 
 ## 🚀 Kurulum
@@ -67,11 +75,11 @@ curl -X POST http://localhost:8006/generate \
   -d '{"text": "Machine learning is a subset of AI", "num_questions": 3, "difficulty": "medium"}'
 ```
 
-### Flashcard Generation
+### Info Cards Generation
 ```bash
-curl -X POST http://localhost:8007/generate \
+curl -X POST http://localhost:8008/generate-cards \
   -H "Content-Type: application/json" \
-  -d '{"text": "Photosynthesis converts light to energy", "num_cards": 5, "card_type": "basic"}'
+  -d '{"text": "Machine learning is a subset of AI", "card_count": 5}'
 ```
 
 ## 📊 Servis Durumu
@@ -79,10 +87,10 @@ curl -X POST http://localhost:8007/generate \
 Tüm servisler `/health` endpoint'i ile sağlık kontrolü yapabilir:
 
 ```bash
-curl http://localhost:8004/health  # PII Masking
+curl http://localhost:8000/health  # PII Masking
 curl http://localhost:8005/health  # Template Rewrite
 curl http://localhost:8006/health  # Quiz Generator
-curl http://localhost:8007/health  # Flashcard Generator
+curl http://localhost:8008/health  # Info Cards
 ```
 
 ## 🛠️ Geliştirme
