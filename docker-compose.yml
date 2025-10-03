@@ -94,17 +94,29 @@ services:
       - ./data/uploads/text:/app/uploads
       - ./data/outputs/text:/app/outputs
 
-# Nginx geçici olarak kapatıldı
-  # nginx:
-  #   image: nginx:alpine
-  #   ports:
-  #     - "8090:80"
-  #   volumes:
-  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
-  #   depends_on:
-  #     - imggen
-  #     - vqa
-  #     - detect
+  # Tablo işlemleri - Grafik üretici servisi
+  chart-generator:
+    build: ./services/table/chart-generator
+    network_mode: "host"
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://127.0.0.1:11434}
+      - MODEL_NAME=${GEMMA_MODEL:-gemma3:27b}
+      - PORT=8009
+    volumes:
+      - ./data/uploads/table:/app/uploads
+      - ./data/outputs/table:/app/outputs
+
+  # Tablo işlemleri - Tablo analiz servisi
+  table-analyzer:
+    build: ./services/table/table-analyzer
+    network_mode: "host"
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://127.0.0.1:11434}
+      - MODEL_NAME=${GEMMA_MODEL:-gemma3:27b}
+      - PORT=8010
+    volumes:
+      - ./data/uploads/table:/app/uploads
+      - ./data/outputs/table:/app/outputs
 
 networks:
   default:

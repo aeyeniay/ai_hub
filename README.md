@@ -1,6 +1,6 @@
 # AI Hub Services
 
-Bu proje, görsel üretim, nesne tespiti ve görselden soru-cevap servislerini içeren bir AI hub'ıdır.
+Bu proje, görsel üretim, nesne tespiti, metin işleme ve tablo analizi servislerini içeren kapsamlı bir AI hub'ıdır.
 
 ## 🚀 Servisler
 
@@ -14,6 +14,10 @@ Bu proje, görsel üretim, nesne tespiti ve görselden soru-cevap servislerini i
 - **quiz-generator** (Port 8006): Gemma3:27b ile interaktif quiz oluşturma ve oynama (Ollama üzerinden)
 - **template-rewrite** (Port 8005): Word şablonları ile belge oluşturma - Gerekçe ve Belgenet formatları (Ollama üzerinden)
 - **info-cards** (Port 8008): Gemma3:27b ile metin analizi ve bilgi kartları üretimi (Ollama üzerinden)
+
+### 📊 Tablo İşlemleri
+- **chart-generator** (Port 8009): JSON/CSV/Excel tablolardan otomatik grafik üretimi (Ollama üzerinden)
+- **table-analyzer** (Port 8010): Tablolardan detaylı metin analizi ve stratejik öngörüler (Ollama üzerinden)
 
 ## 🖥️ Sistem Gereksinimleri
 
@@ -71,14 +75,16 @@ sudo systemctl restart docker
 ### 3. Proje Kurulumu
 ```bash
 # Projeyi klonla
-git clone <repository-url>
+git clone https://github.com/aeyeniay/ai_hub.git
 cd ai_hub
 
-# Gerekli dizinleri oluştur
-mkdir -p uploads outputs
+# Otomatik kurulum (önerilen)
+chmod +x setup.sh
+./setup.sh
 
-# Servisleri başlat
-docker-compose up --build -d
+# Manuel kurulum (alternatif)
+cp .env.example .env
+docker compose up -d
 ```
 
 ## 📁 Dizin Yapısı
@@ -90,17 +96,26 @@ ai_hub/
 │   │   ├── imggen/      # Görsel üretim servisi (GPU gerekli)
 │   │   ├── detect/      # Nesne tespiti servisi (Ollama üzerinden)
 │   │   └── vqa/         # VQA servisi (Ollama üzerinden)
-│   └── text/            # Metin işleme servisleri (gelecekte eklenecek)
+│   ├── text/            # Metin işleme servisleri
+│   │   ├── pii-masking/ # Kişisel bilgi maskeleme
+│   │   ├── quiz-generator/ # Quiz oluşturma ve oynama
+│   │   ├── template-rewrite/ # Word şablonları ile belge oluşturma
+│   │   └── info-cards/  # Bilgi kartları üretimi
+│   └── table/           # Tablo işlemleri
+│       ├── chart-generator/ # Grafik üretimi
+│       └── table-analyzer/  # Tablo analizi
 ├── data/                # Merkezi veri yönetimi
 │   ├── uploads/         # Yüklenen dosyalar
 │   │   ├── images/      # Görsel dosyalar
-│   │   └── documents/   # Metin dosyaları
+│   │   ├── text/        # Metin dosyaları
+│   │   └── table/       # Tablo dosyaları
 │   └── outputs/         # Üretilen çıktılar
 │       ├── images/      # Üretilen görseller
-│       ├── summaries/   # Özetler
-│       └── translations/# Çeviriler
-├── frontend/            # Web arayüzü
+│       ├── text/        # Metin çıktıları
+│       └── table/       # Grafik ve analiz çıktıları
+├── models/              # Yerel model dosyaları
 ├── docker-compose.yml   # Servis konfigürasyonu
+├── setup.sh            # Otomatik kurulum scripti
 └── README.md            
 ```
 
@@ -142,6 +157,41 @@ curl -X POST http://localhost:8003/detect \
     }
   ]
 }
+```
+
+### PII Maskeleme (pii-masking)
+```bash
+curl -X POST http://localhost:8000/mask \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Ahmet Yılmaz 12345678901 numaralı TCKN ile İstanbulda yaşıyor. E-posta: ahmet@example.com"}'
+```
+
+### Quiz Oluşturma (quiz-generator)
+```bash
+curl -X POST http://localhost:8006/generate \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Sıfır atık projesi çevre koruma için önemlidir.", "num_questions": 3}'
+```
+
+### Bilgi Kartları (info-cards)
+```bash
+curl -X POST http://localhost:8008/generate-cards \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Yapay zeka teknolojisi hakkında bilgi", "num_cards": 5}'
+```
+
+### Grafik Üretimi (chart-generator)
+```bash
+curl -X POST http://localhost:8009/generate-charts \
+  -H "Content-Type: application/json" \
+  -d @test_chart_generator.json
+```
+
+### Tablo Analizi (table-analyzer)
+```bash
+curl -X POST http://localhost:8010/analyze-table \
+  -H "Content-Type: application/json" \
+  -d @test_table_analyzer.json
 ```
 
 ### Interaktif Görselden Soru-Cevap (vqa)
@@ -207,7 +257,7 @@ graph TB
     style L fill:#f8f9fa
 ```
 
-### 📝 Text Servisleri Sistem Akışı
+### 📝 Metin Servisleri Sistem Akışı
 
 ```mermaid
 graph TB
@@ -216,29 +266,73 @@ graph TB
     B --> C[PII-Masking Servisi<br/>Port 8000]
     B --> D[Quiz-Generator Servisi<br/>Port 8006]
     B --> E[Template-Rewrite Servisi<br/>Port 8005]
+    B --> F[Info-Cards Servisi<br/>Port 8008]
     
-    C --> F[Ollama API<br/>127.0.0.1:11434]
-    D --> F
+    C --> G[Ollama API<br/>127.0.0.1:11434]
+    D --> G
+    F --> G
     
-    F --> G[Gemma3:27b Model<br/>Kişisel Bilgi Maskeleme]
-    F --> H[Gemma3:27b Model<br/>Quiz Oluşturma ve Oynama]
+    G --> H[Gemma3:27b Model<br/>Kişisel Bilgi Maskeleme]
+    G --> I[Gemma3:27b Model<br/>Quiz Oluşturma ve Oynama]
+    G --> J[Gemma3:27b Model<br/>Bilgi Kartları Üretimi]
     
-    G --> I[Türkçe PII Tespit ve Maskeleme<br/>JSON Response]
-    H --> J[Interaktif Quiz Sistemi<br/>Session Tabanlı Oyun]
+    H --> K[Türkçe PII Tespit ve Maskeleme<br/>JSON Response]
+    I --> L[Interaktif Quiz Sistemi<br/>Session Tabanlı Oyun]
+    J --> M[Tanım ve Soru-Cevap Kartları<br/>JSON Response]
     
-    E --> K[Metin Şablonlama<br/>Template Processing]
+    E --> N[Word Şablonlama<br/>Gerekçe ve Belgenet Formatları]
     
-    I --> L[Kullanıcıya Dönen Sonuç]
-    J --> L
-    K --> L
+    K --> O[Kullanıcıya Dönen Sonuç]
+    L --> O
+    M --> O
+    N --> O
     
     style C fill:#e8f5e8
     style D fill:#fff3e0
     style E fill:#f3e5f5
-    style F fill:#fce4ec
-    style G fill:#f8f9fa
+    style F fill:#e1f5fe
+    style G fill:#fce4ec
     style H fill:#f8f9fa
     style I fill:#f8f9fa
+    style J fill:#f8f9fa
+    style K fill:#f8f9fa
+    style L fill:#f8f9fa
+    style M fill:#f8f9fa
+    style N fill:#f8f9fa
+    style O fill:#f8f9fa
+```
+
+### 📊 Tablo İşlemleri Sistem Akışı
+
+```mermaid
+graph TB
+    A[Kullanıcı] --> B[API İstekleri]
+    
+    B --> C[Chart-Generator Servisi<br/>Port 8009]
+    B --> D[Table-Analyzer Servisi<br/>Port 8010]
+    
+    C --> E[Ollama API<br/>127.0.0.1:11434]
+    D --> E
+    
+    E --> F[Gemma3:27b Model<br/>Grafik Önerileri]
+    E --> G[Gemma3:27b Model<br/>Detaylı Tablo Analizi]
+    
+    F --> H[Plotly Grafik Üretimi<br/>Bar, Line, Pie, Scatter, Heatmap]
+    G --> I[IELTS Writing Task 1 Stilinde<br/>Kapsamlı Metin Analizi]
+    
+    H --> J[PNG/SVG Grafik Dosyaları<br/>Çoklu Seri Karşılaştırmalar]
+    I --> K[Stratejik Öngörüler<br/>İstatistiksel Analiz ve Risk Değerlendirmesi]
+    
+    J --> L[Kullanıcıya Dönen Sonuç]
+    K --> L
+    
+    style C fill:#e8f5e8
+    style D fill:#fff3e0
+    style E fill:#fce4ec
+    style F fill:#f8f9fa
+    style G fill:#f8f9fa
+    style H fill:#f3e5f5
+    style I fill:#e1f5fe
     style J fill:#f8f9fa
     style K fill:#f8f9fa
     style L fill:#f8f9fa

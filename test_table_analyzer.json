@@ -1,0 +1,18 @@
+{
+  "table_data": [
+    {"ay": "Ocak", "satis": 100, "maliyet": 80, "kar": 20, "bolge": "Kuzey"},
+    {"ay": "Şubat", "satis": 120, "maliyet": 90, "kar": 30, "bolge": "Güney"},
+    {"ay": "Mart", "satis": 95, "maliyet": 75, "kar": 20, "bolge": "Doğu"},
+    {"ay": "Nisan", "satis": 140, "maliyet": 100, "kar": 40, "bolge": "Batı"},
+    {"ay": "Mayıs", "satis": 160, "maliyet": 120, "kar": 40, "bolge": "Kuzey"},
+    {"ay": "Haziran", "satis": 180, "maliyet": 130, "kar": 50, "bolge": "Güney"},
+    {"ay": "Temmuz", "satis": 200, "maliyet": 150, "kar": 50, "bolge": "Doğu"},
+    {"ay": "Ağustos", "satis": 190, "maliyet": 140, "kar": 50, "bolge": "Batı"},
+    {"ay": "Eylül", "satis": 170, "maliyet": 125, "kar": 45, "bolge": "Kuzey"},
+    {"ay": "Ekim", "satis": 150, "maliyet": 110, "kar": 40, "bolge": "Güney"},
+    {"ay": "Kasım", "satis": 130, "maliyet": 95, "kar": 35, "bolge": "Doğu"},
+    {"ay": "Aralık", "satis": 160, "maliyet": 120, "kar": 40, "bolge": "Batı"}
+  ],
+  "language": "turkish",
+  "output_format": "text"
+}

@@ -48,14 +48,38 @@ QWEN_VL_MODEL=qwen2.5vl:7b     # Daha hızlı çalışır
 
 ### Port Ayarları
 ```bash
-# Varsayılan portlar
+# Görsel Servisleri
 IMGGEN_PORT=8001
 VQA_PORT=8002
 DETECT_PORT=8003
+
+# Metin Servisleri
 PII_MASKING_PORT=8000
 TEMPLATE_REWRITE_PORT=8005
 QUIZ_GENERATOR_PORT=8006
 INFO_CARDS_PORT=8008
+
+# Tablo İşlemleri
+CHART_GENERATOR_PORT=8009
+TABLE_ANALYZER_PORT=8010
+```
+
+### Servis Ayarları
+```bash
+# Görsel Servisleri
+IMGGEN_PORT=8001
+VQA_PORT=8002
+DETECT_PORT=8003
+
+# Metin Servisleri
+PII_MASKING_PORT=8000
+TEMPLATE_REWRITE_PORT=8005
+QUIZ_GENERATOR_PORT=8006
+INFO_CARDS_PORT=8008
+
+# Tablo İşlemleri
+CHART_GENERATOR_PORT=8009
+TABLE_ANALYZER_PORT=8010
 
 # Port çakışması durumunda değiştirin
 VQA_PORT=9002

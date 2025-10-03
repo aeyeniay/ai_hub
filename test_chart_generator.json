@@ -1,0 +1,12 @@
+{
+  "table_data": [
+    {"ay": "Ocak", "satis": 100, "maliyet": 80, "kar": 20},
+    {"ay": "Şubat", "satis": 120, "maliyet": 90, "kar": 30},
+    {"ay": "Mart", "satis": 95, "maliyet": 75, "kar": 20},
+    {"ay": "Nisan", "satis": 140, "maliyet": 100, "kar": 40},
+    {"ay": "Mayıs", "satis": 160, "maliyet": 120, "kar": 40},
+    {"ay": "Haziran", "satis": 180, "maliyet": 130, "kar": 50}
+  ],
+  "max_charts": 4,
+  "output_format": "png"
+}
