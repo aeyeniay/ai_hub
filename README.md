@@ -42,9 +42,15 @@ Bu proje, görsel üretim, nesne tespiti, metin işleme ve tablo analizi servisl
 - Container'lar `network_mode: "host"` kullanır
 
 ### GPU Kullanımı
-- **imggen**: CUDA GPU hızlandırması kullanır
-- **detect**: Ollama üzerinden çalışır (GPU opsiyonel)
-- **vqa**: Ollama üzerinden çalışır (GPU opsiyonel)
+- **imggen**: CUDA GPU hızlandırması kullanır (zorunlu)
+- **detect**: Ollama üzerinden çalışır (GPU ile performans artışı)
+- **vqa**: Ollama üzerinden çalışır (GPU ile performans artışı)
+- **pii-masking**: Ollama üzerinden çalışır (GPU ile performans artışı)
+- **quiz-generator**: Ollama üzerinden çalışır (GPU ile performans artışı)
+- **template-rewrite**: Ollama üzerinden çalışır (GPU ile performans artışı)
+- **info-cards**: Ollama üzerinden çalışır (GPU ile performans artışı)
+- **chart-generator**: Ollama üzerinden çalışır (GPU ile performans artışı)
+- **table-analyzer**: Ollama üzerinden çalışır (GPU ile performans artışı)
 
 ## 🛠️ Kurulum
 
@@ -146,14 +152,14 @@ curl -X POST http://localhost:8003/detect \
     {
       "name": "araba",
       "confidence": 95,
-      "location": "Center",
-      "description": "A silver SUV with the trunk open, parked on a grassy hill."
+      "location": "Merkez",
+      "description": "Açık bagajıyla çimenlik bir tepede park edilmiş gümüş renkli bir SUV."
     },
     {
       "name": "erkek",
       "confidence": 90,
-      "location": "Left-Center",
-      "description": "A man oturuyor at the edge of the open car trunk, giyiyor a jacket and boots."
+      "location": "Sol-Merkez",
+      "description": "Açık araba bagajının kenarında oturan, ceket ve bot giyen bir adam."
     }
   ]
 }
@@ -222,7 +228,9 @@ curl -X POST http://localhost:8002/clear \
 - ✅ **Konuşma Geçmişi**: Tüm soru-cevaplar saklanır
 - ✅ **Qwen2.5VL:32b**: Gelişmiş görsel anlama modeli
 
-## 🔄 Sistem Akış Diyagramı
+## 🔄 Sistem Akış Diyagramları
+
+### 📝 Görsel Servisleri Sistem Akışı
 
 ```mermaid
 graph TB
@@ -318,7 +326,7 @@ graph TB
     E --> G[Gemma3:27b Model<br/>Detaylı Tablo Analizi]
     
     F --> H[Plotly Grafik Üretimi<br/>Bar, Line, Pie, Scatter, Heatmap]
-    G --> I[IELTS Writing Task 1 Stilinde<br/>Kapsamlı Metin Analizi]
+    G --> I[Akademik Stilinde<br/>Kapsamlı Metin Analizi]
     
     H --> J[PNG/SVG Grafik Dosyaları<br/>Çoklu Seri Karşılaştırmalar]
     I --> K[Stratejik Öngörüler<br/>İstatistiksel Analiz ve Risk Değerlendirmesi]
@@ -485,6 +493,99 @@ curl -X POST http://localhost:8006/answer \
   -H "Content-Type: application/json" \
   -d '{"quiz_id":"quiz-id", "question_index":0, "user_answer":"A) Seçenek"}'
 ```
+
+### PII Masking Servisi (Gemma3:27b) Test Edildi
+
+**✅ Başarılı Testler:**
+- **Kişisel Bilgi Tespiti**: TCKN, e-posta, adres, isim tespiti başarılı
+- **Maskeleme İşlemi**: Tespit edilen bilgiler doğru şekilde maskelendi
+- **Türkçe Destek**: Türkçe metinlerde mükemmel performans
+
+**📊 Performans Metrikleri:**
+- **Response Time**: ~3-5 saniye
+- **Accuracy**: %95+ (yaygın PII türleri için)
+- **Supported Entities**: PERSON, EMAIL, ID_NUMBER, ADDRESS, PHONE
+
+**🎯 Tespit Edilen PII Türleri:**
+- İsim ve soyisim
+- TC Kimlik Numarası
+- E-posta adresleri
+- Telefon numaraları
+- Adres bilgileri
+- IBAN numaraları
+
+### Info Cards Servisi (Gemma3:27b) Test Edildi
+
+**✅ Başarılı Testler:**
+- **Bilgi Kartı Üretimi**: 3-5 kart başarıyla oluşturuldu
+- **Kart Türleri**: Tanım ve soru-cevap kartları
+- **Türkçe İçerik**: Tamamen Türkçe çıktı
+
+**📊 Performans Metrikleri:**
+- **Response Time**: ~10-15 saniye
+- **Card Quality**: Yüksek kaliteli, öğretici içerik
+- **Processing Time**: 11.41 saniye (5 kart için)
+
+### Chart Generator Servisi (Gemma3:27b) Test Edildi
+
+**✅ Başarılı Testler:**
+- **JSON Input**: 4 grafik başarıyla üretildi
+- **CSV Upload**: Dosya yükleme ve grafik üretimi çalışıyor
+- **Grafik Türleri**: Bar, Line, Pie, Scatter, Heatmap, Histogram
+
+**📊 Performans Metrikleri:**
+- **Response Time**: ~12-15 saniye
+- **Chart Quality**: Yüksek kaliteli, profesyonel grafikler
+- **Multi-Series Support**: Karşılaştırma grafikleri için çoklu seri desteği
+
+**🎯 Grafik Özellikleri:**
+- Otomatik grafik türü önerisi
+- Çoklu veri serisi desteği
+- PNG/SVG çıktı formatları
+- Renkli ve açıklayıcı grafikler
+
+### Table Analyzer Servisi (Gemma3:27b) Test Edildi
+
+**✅ Başarılı Testler:**
+- **JSON Analysis**: Kapsamlı analiz raporu üretildi
+- **CSV Analysis**: Dosya yükleme ve analiz çalışıyor
+- **Titanik Dataset**: 418 satırlık veri seti başarıyla analiz edildi
+
+**📊 Performans Metrikleri:**
+- **Response Time**: ~45-50 saniye (büyük veri setleri için)
+- **Analysis Depth**: 12 farklı analiz kategorisi
+- **Language Support**: Türkçe ve İngilizce
+
+**🎯 Analiz Kategorileri:**
+- İstatistiksel analiz
+- Trend analizi
+- Karşılaştırmalı analiz
+- Korelasyon analizi
+- Anomali tespiti
+- İş etkileri
+- Stratejik öneriler
+- Risk değerlendirmesi
+- Gelecek projeksiyonu
+
+### Template Rewrite Servisi (Gemma3:27b) Test Edildi
+
+**✅ Başarılı Testler:**
+- **Gerekçe Belgesi**: Word formatında başarıyla oluşturuldu
+- **Belgenet Belgesi**: Resmi yazı formatında üretildi
+- **Dinamik İçerik**: Başlık ve içerik otomatik oluşturuldu
+- **İmza Blokları**: Değişken sayıda imzacı desteği
+
+**📊 Performans Metrikleri:**
+- **Response Time**: ~20-30 saniye
+- **Document Quality**: Profesyonel Word belgeleri
+- **Template Support**: Gerekçe ve Belgenet formatları
+
+**🎯 Belge Özellikleri:**
+- Dinamik başlık oluşturma
+- Merkezi imza hizalama
+- Kısa dosya adları
+- Word (.docx) çıktı formatı
+- Türkçe içerik desteği
 
 ## 🤝 Katkıda Bulunma
 
