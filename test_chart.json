@@ -1,0 +1,17 @@
+{
+  "table_data": [
+    {"PassengerId":892,"Survived":0,"Pclass":3,"Name":"Kelly, Mr. James","Sex":"male","Age":34.5,"SibSp":0,"Parch":0,"Ticket":"330911","Fare":7.8292,"Cabin":"","Embarked":"Q"},
+    {"PassengerId":893,"Survived":1,"Pclass":3,"Name":"Wilkes, Mrs. James","Sex":"female","Age":47,"SibSp":1,"Parch":0,"Ticket":"363272","Fare":7,"Cabin":"","Embarked":"S"},
+    {"PassengerId":894,"Survived":0,"Pclass":2,"Name":"Myles, Mr. Thomas","Sex":"male","Age":62,"SibSp":0,"Parch":0,"Ticket":"240276","Fare":9.6875,"Cabin":"","Embarked":"Q"},
+    {"PassengerId":895,"Survived":0,"Pclass":3,"Name":"Wirz, Mr. Albert","Sex":"male","Age":27,"SibSp":0,"Parch":0,"Ticket":"315154","Fare":8.6625,"Cabin":"","Embarked":"S"},
+    {"PassengerId":896,"Survived":1,"Pclass":3,"Name":"Hirvonen, Mrs. Alexander","Sex":"female","Age":22,"SibSp":1,"Parch":1,"Ticket":"3101298","Fare":12.2875,"Cabin":"","Embarked":"S"},
+    {"PassengerId":897,"Survived":0,"Pclass":3,"Name":"Svensson, Mr. Johan","Sex":"male","Age":14,"SibSp":0,"Parch":0,"Ticket":"7538","Fare":9.225,"Cabin":"","Embarked":"S"},
+    {"PassengerId":898,"Survived":1,"Pclass":3,"Name":"Connolly, Miss. Kate","Sex":"female","Age":30,"SibSp":0,"Parch":0,"Ticket":"330972","Fare":7.6292,"Cabin":"","Embarked":"Q"},
+    {"PassengerId":899,"Survived":0,"Pclass":2,"Name":"Caldwell, Mr. Albert","Sex":"male","Age":26,"SibSp":1,"Parch":1,"Ticket":"248738","Fare":29,"Cabin":"","Embarked":"S"},
+    {"PassengerId":900,"Survived":1,"Pclass":3,"Name":"Abrahim, Mrs. Joseph","Sex":"female","Age":18,"SibSp":0,"Parch":0,"Ticket":"2657","Fare":7.2292,"Cabin":"","Embarked":"C"},
+    {"PassengerId":901,"Survived":0,"Pclass":3,"Name":"Davies, Mr. John","Sex":"male","Age":21,"SibSp":2,"Parch":0,"Ticket":"A/4 48871","Fare":24.15,"Cabin":"","Embarked":"S"}
+  ],
+  "max_charts": 5
+}
+
+

@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from typing import List, Dict, Any, Optional
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import requests
 import time
@@ -27,6 +29,19 @@ app = FastAPI(
     description="Tablolardan otomatik grafik üretimi",
     version="1.0.0"
 )
+
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount static files
+os.makedirs("/app/outputs", exist_ok=True)
+app.mount("/outputs", StaticFiles(directory="/app/outputs"), name="outputs")
 
 # Ortam değişkenleri
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
@@ -65,30 +80,101 @@ class ChartResponse(BaseModel):
 def call_ollama_for_analysis(table_data: List[Dict], max_charts: int) -> List[ChartConfig]:
     """Ollama LLM'den tablo analizi ve grafik önerileri al"""
     try:
-        # Tabloyu string'e çevir
-        table_str = json.dumps(table_data, ensure_ascii=False, indent=2)
+        # DataFrame'e çevir ve analiz et
+        df = pd.DataFrame(table_data)
+        
+        # String'leri mümkünse sayısal'a çevir
+        for col in df.columns:
+            try:
+                # Eğer kolon sayısal'a çevrilebiliyorsa, çevir
+                df[col] = pd.to_numeric(df[col])
+            except (ValueError, TypeError):
+                # Çevrilemezse, olduğu gibi bırak
+                pass
+        
+        # Null değerleri olan satırları filtrele
+        initial_rows = len(df)
+        df_clean = df.dropna()
+        dropped_rows = initial_rows - len(df_clean)
+        
+        if dropped_rows > 0:
+            print(f"ℹ️ {dropped_rows} satır null değer içerdiği için filtrelendi")
+        
+        # Temizlenmiş veriyi kullan
+        df = df_clean
+        
+        # Kolon tiplerini belirle
+        numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
+        categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
+        
+        # Kategorik kolonlarda unique değer sayısı az olanları bul (gerçek kategorik)
+        true_categorical = []
+        for col in categorical_cols:
+            unique_count = df[col].nunique()
+            if unique_count <= 20:  # 20'den az unique değer varsa kategorik
+                true_categorical.append(f"{col} ({unique_count} kategori)")
+        
+        # Sayısal kolonlar için istatistikler ve korelasyon
+        numeric_stats = []
+        for col in numeric_cols:
+            min_val = df[col].min()
+            max_val = df[col].max()
+            mean_val = df[col].mean()
+            numeric_stats.append(f"{col} (ort:{mean_val:.1f}, min:{min_val:.1f}, max:{max_val:.1f})")
+        
+        # Korelasyon analizi (en yüksek korelasyonları bul)
+        correlations = []
+        if len(numeric_cols) >= 2:
+            corr_matrix = df[numeric_cols].corr()
+            for i in range(len(numeric_cols)):
+                for j in range(i+1, len(numeric_cols)):
+                    corr_val = abs(corr_matrix.iloc[i, j])
+                    if corr_val > 0.3:  # %30'dan fazla korelasyon
+                        correlations.append(f"{numeric_cols[i]}-{numeric_cols[j]} (r={corr_val:.2f})")
+        
+        # Dinamik grafik sayısı belirleme
+        suggested_chart_count = min(
+            max_charts,
+            len(true_categorical) + len(numeric_cols) + len(correlations),
+            10  # Maksimum 10 grafik
+        )
+        suggested_chart_count = max(suggested_chart_count, 3)  # En az 3 grafik
+        
+        # Sadece ilk 3 satırı örnek olarak göster
+        sample_str = json.dumps(table_data[:3], ensure_ascii=False, indent=2)
+        
+        corr_info = f"\n- Yüksek Korelasyonlar: {', '.join(correlations)}" if correlations else ""
         
         prompt = f"""
-        Bu tabloyu analiz et ve en uygun {max_charts} adet grafik türünü belirle:
+        Bu tabloyu analiz et ve {suggested_chart_count} farklı grafik türü öner.
         
-        Tablo Verisi:
-        {table_str}
+        VERİ BİLGİLERİ ({len(df)} satır, null değerler temizlendi):
+        - Sayısal: {', '.join(numeric_stats) if numeric_stats else 'Yok'}
+        - Kategorik: {', '.join(true_categorical) if true_categorical else 'Yok'}{corr_info}
         
-        Her grafik için şunları belirle:
-        1. Grafik türü: bar, line, pie, scatter, heatmap, histogram
-        2. X ve Y eksenleri (sütun adları)
-        3. Anlamlı başlık
-        4. Kısa açıklama
+        Örnek: {sample_str}
         
-        Sadece JSON formatında döndür:
+        GRAFİK ÖNERİLERİ:
+        1. Her kategorik kolon için bar/pie chart (kategori dağılımı)
+        2. Sayısal kolonların dağılımı için histogram
+        3. Korelasyonu yüksek sayısal kolonlar için scatter plot
+        4. Kategorik-sayısal kombinasyonlar için grouped bar chart
+        
+        KURALLAR:
+        - Bar/Pie: X=kategorik, Y=sayısal (count veya sum)
+        - Scatter/Line: X=sayısal, Y=sayısal
+        - Histogram: Tek sayısal kolon
+        - ID/metin kolonlarını kullanma
+        
+        JSON döndür:
         {{
             "charts": [
                 {{
                     "type": "bar",
-                    "title": "Grafik Başlığı",
-                    "x_axis": "sütun_adı",
-                    "y_axis": "sütun_adı", 
-                    "description": "Bu grafik ne gösteriyor"
+                    "title": "Türkçe Başlık",
+                    "x_axis": "kolon_adı",
+                    "y_axis": "kolon_adı",
+                    "description": "Grafik açıklaması"
                 }}
             ]
         }}
@@ -123,17 +209,104 @@ def call_ollama_for_analysis(table_data: List[Dict], max_charts: int) -> List[Ch
         data = json.loads(json_str)
         charts_data = data.get("charts", [])
         
-        # ChartConfig objelerine dönüştür
+        # Mevcut sütunları al
+        available_columns = list(table_data[0].keys()) if table_data else []
+        
+        # Sütun adı eşleştirme fonksiyonu (case-insensitive + fuzzy)
+        def find_matching_column(suggested_col: str, available_cols: List[str]) -> str:
+            # Tam eşleşme
+            if suggested_col in available_cols:
+                return suggested_col
+            
+            # Case-insensitive eşleşme
+            for col in available_cols:
+                if col.lower() == suggested_col.lower():
+                    return col
+            
+            # Kısmi eşleşme
+            for col in available_cols:
+                if suggested_col.lower() in col.lower() or col.lower() in suggested_col.lower():
+                    return col
+            
+            return None
+        
+        # DataFrame ve kolon tipleri
+        df = pd.DataFrame(table_data)
+        
+        # String'leri mümkünse sayısal'a çevir
+        for col in df.columns:
+            try:
+                df[col] = pd.to_numeric(df[col])
+            except (ValueError, TypeError):
+                pass
+        
+        numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
+        categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
+        
+        # ChartConfig objelerine dönüştür ve validate et
         chart_configs = []
         for chart_data in charts_data[:max_charts]:
+            x_axis = chart_data.get("x_axis") or ""
+            y_axis = chart_data.get("y_axis") or ""
+            chart_type = chart_data.get("type") or "bar"
+            
+            # None değerleri kontrol et
+            if not x_axis or not y_axis or not chart_type:
+                print(f"⚠️ Eksik veri: x={x_axis}, y={y_axis}, type={chart_type}")
+                continue
+            
+            # Sütun adlarını eşleştir
+            matched_x = find_matching_column(str(x_axis), available_columns)
+            matched_y = find_matching_column(str(y_axis), available_columns)
+            
+            if not matched_x or not matched_y:
+                print(f"⚠️ Geçersiz sütunlar - x: {x_axis}→{matched_x}, y: {y_axis}→{matched_y}")
+                print(f"   Mevcut: {available_columns}")
+                continue
+            
+            # Grafik türüne göre kolon tiplerini validate et
+            is_valid = True
+            if chart_type in ["bar", "pie"]:
+                # Bar/Pie: X kategorik, Y sayısal
+                if matched_x not in categorical_cols:
+                    print(f"⚠️ {chart_type}: X ekseni ({matched_x}) kategorik değil, atlanıyor")
+                    is_valid = False
+                if matched_y not in numeric_cols:
+                    print(f"⚠️ {chart_type}: Y ekseni ({matched_y}) sayısal değil, atlanıyor")
+                    is_valid = False
+            elif chart_type in ["scatter", "line"]:
+                # Scatter/Line: Her ikisi de sayısal
+                if matched_x not in numeric_cols:
+                    print(f"⚠️ {chart_type}: X ekseni ({matched_x}) sayısal değil, atlanıyor")
+                    is_valid = False
+                if matched_y not in numeric_cols:
+                    print(f"⚠️ {chart_type}: Y ekseni ({matched_y}) sayısal değil, atlanıyor")
+                    is_valid = False
+            elif chart_type == "histogram":
+                # Histogram: Sadece Y ekseni kullanılır ve sayısal olmalı
+                if matched_y not in numeric_cols:
+                    print(f"⚠️ histogram: Y ekseni ({matched_y}) sayısal değil, atlanıyor")
+                    is_valid = False
+            
+            if not is_valid:
+                continue
+            
+            if matched_x != x_axis or matched_y != y_axis:
+                print(f"✅ Sütun eşleştirildi: {x_axis}→{matched_x}, {y_axis}→{matched_y}")
+            
             config = ChartConfig(
-                type=chart_data.get("type", "bar"),
+                type=chart_type,
                 title=chart_data.get("title", "Grafik"),
-                x_axis=chart_data.get("x_axis", ""),
-                y_axis=chart_data.get("y_axis", ""),
+                x_axis=matched_x,
+                y_axis=matched_y,
                 description=chart_data.get("description", "")
             )
             chart_configs.append(config)
+        
+        if not chart_configs:
+            print("⚠️ Hiç geçerli grafik bulunamadı, fallback kullanılıyor")
+            # Fallback: Basit grafikler oluştur
+            return create_fallback_charts(table_data, max_charts)
         
         return chart_configs
         
@@ -148,6 +321,14 @@ def create_fallback_charts(table_data: List[Dict], max_charts: int) -> List[Char
         return []
     
     df = pd.DataFrame(table_data)
+    
+    # String'leri mümkünse sayısal'a çevir
+    for col in df.columns:
+        try:
+            df[col] = pd.to_numeric(df[col])
+        except (ValueError, TypeError):
+            pass
+    
     numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
     categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
     
@@ -157,20 +338,30 @@ def create_fallback_charts(table_data: List[Dict], max_charts: int) -> List[Char
     if categorical_cols and numeric_cols:
         charts.append(ChartConfig(
             type="bar",
-            title=f"{categorical_cols[0]} vs {numeric_cols[0]}",
+            title=f"{categorical_cols[0]} - {numeric_cols[0]} Grafiği",
             x_axis=categorical_cols[0],
             y_axis=numeric_cols[0],
             description="Kategorik karşılaştırma grafiği"
         ))
     
-    # Line chart (eğer tarih varsa)
+    # Scatter chart (iki sayısal kolon)
     if len(numeric_cols) >= 2:
         charts.append(ChartConfig(
-            type="line",
-            title=f"{numeric_cols[0]} Trendi",
-            x_axis="index",
+            type="scatter",
+            title=f"{numeric_cols[0]} vs {numeric_cols[1]}",
+            x_axis=numeric_cols[0],
+            y_axis=numeric_cols[1],
+            description="Sayısal korelasyon grafiği"
+        ))
+    
+    # Histogram (tek sayısal kolon)
+    if numeric_cols:
+        charts.append(ChartConfig(
+            type="histogram",
+            title=f"{numeric_cols[0]} Dağılımı",
+            x_axis=numeric_cols[0],
             y_axis=numeric_cols[0],
-            description="Zaman serisi grafiği"
+            description="Sayısal değer dağılımı"
         ))
     
     return charts[:max_charts]
@@ -179,6 +370,13 @@ def generate_chart(chart_config: ChartConfig, table_data: List[Dict], output_for
     """Grafik oluştur ve kaydet"""
     try:
         df = pd.DataFrame(table_data)
+        
+        # String'leri mümkünse sayısal'a çevir
+        for col in df.columns:
+            try:
+                df[col] = pd.to_numeric(df[col])
+            except (ValueError, TypeError):
+                pass
         
         # Grafik oluştur
         if chart_config.type == "bar":
@@ -250,6 +448,9 @@ def generate_chart(chart_config: ChartConfig, table_data: List[Dict], output_for
         # Dosya boyutunu al
         file_size = os.path.getsize(filepath) if os.path.exists(filepath) else 0
         
+        # Frontend için path: /outputs/filename.png
+        web_path = f"/outputs/{filename}"
+        
         return Chart(
             id=len(table_data),  # Basit ID
             type=chart_config.type,
@@ -257,7 +458,7 @@ def generate_chart(chart_config: ChartConfig, table_data: List[Dict], output_for
             x_axis=chart_config.x_axis,
             y_axis=chart_config.y_axis,
             description=chart_config.description,
-            file_path=filepath,
+            file_path=web_path,
             file_size=file_size
         )
         

@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Any
 import uvicorn
@@ -10,6 +11,15 @@ import re
 import os
 
 app = FastAPI(title="PII Masking Service (LLM-based)", version="2.0.0")
+
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Ollama configuration
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
@@ -219,9 +229,27 @@ def mask_text(text: str, entities: List[Dict[str, Any]], masking_type: str) -> t
     """Mask detected entities in text and return masked text with masked entities info"""
     masked_text = text
     masked_entities = []
-
+    
+    # LLM'nin pozisyonları yanlış olabilir, bu yüzden metinde değeri arayıp gerçek pozisyonu buluyoruz
+    validated_entities = []
+    for entity in entities:
+        value = entity.get('value', '')
+        if not value:
+            continue
+            
+        # Metinde değeri bul
+        actual_start = text.find(value)
+        if actual_start != -1:
+            validated_entities.append({
+                'type': entity['type'],
+                'value': value,
+                'start': actual_start,
+                'end': actual_start + len(value),
+                'confidence': entity.get('confidence', 0.9)
+            })
+    
     # Sort entities by start position in reverse order to avoid index shifting
-    entities_sorted = sorted(entities, key=lambda x: x['start'], reverse=True)
+    entities_sorted = sorted(validated_entities, key=lambda x: x['start'], reverse=True)
 
     for entity in entities_sorted:
         if masking_type == "replace":

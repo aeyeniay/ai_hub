@@ -44,15 +44,21 @@ def detect_objects():
         image.save(img_buffer, format='PNG')
         img_str = base64.b64encode(img_buffer.getvalue()).decode()
         
-        # LLaVA prompt'u hazırla - İngilizce (encoding sorunu çözümü)
-        prompt = """What objects are in this image? For each object provide:
-        - Object name (in English)
-        - Location in image
-        - Brief description
-        - Confidence score (0-100)
-        
-        Return JSON format:
-        {"objects":[{"name":"object_name","location":"position","description":"description","confidence":number}]}"""
+        # Gemma3 prompt'u hazırla - Tamamen Türkçe
+        prompt = """Bu görseldeki nesneleri Türkçe olarak analiz et ve listele.
+
+Her nesne için:
+- Nesne adı (Türkçe, örn: araba, köpek, insan)
+- Konumu (Türkçe, örn: merkez, sol taraf, arka plan)
+- Detaylı açıklama (tamamen Türkçe cümleler)
+- Güven puanı (0-100 arası sayı)
+
+ÖNEMLİ: Açıklamalar tamamen Türkçe olmalı. İngilizce kelime kullanma!
+
+JSON formatı:
+{"nesneler":[{"ad":"araba","konum":"merkez","aciklama":"Gümüş renkli SUV, bagajı açık","guven":95}]}
+
+Sadece JSON döndür:"""
         
         # Ollama API'ye istek gönder
         payload = {
@@ -82,7 +88,17 @@ def detect_objects():
                 # Debug için yazdır
                 print(f"JSON string: {json_str}")
                 parsed_result = json.loads(json_str)
-                objects = parsed_result.get('objects', [])
+                
+                # Türkçe key'leri İngilizce'ye çevir (API standardı için)
+                turkish_objects = parsed_result.get('nesneler', [])
+                objects = []
+                for obj in turkish_objects:
+                    objects.append({
+                        'name': obj.get('ad', ''),
+                        'location': obj.get('konum', ''),
+                        'description': obj.get('aciklama', ''),
+                        'confidence': obj.get('guven', 0)
+                    })
             else:
                 # JSON bulunamadıysa manuel parse et
                 objects = parse_llava_response(llava_response)
@@ -93,21 +109,18 @@ def detect_objects():
             # JSON parse hatası durumunda manuel parse et
             objects = parse_llava_response(llava_response)
         
-        # Nesne isimlerini Türkçe'ye çevir
-        turkish_objects = []
-        for obj in objects:
-            turkish_obj = translate_object_to_turkish(obj)
-            turkish_objects.append(turkish_obj)
-        
-        # Temiz çıktı formatı
+        # Temiz çıktı formatı (içerik Türkçe)
         return jsonify({
             "status": "success",
             "model": MODEL_NAME,
-            "total_objects": len(turkish_objects),
-            "objects": turkish_objects
+            "total_objects": len(objects),
+            "objects": objects
         })
         
     except Exception as e:
+        print(f"ERROR in detect_objects: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 def translate_object_to_turkish(obj):

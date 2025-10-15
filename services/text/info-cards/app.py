@@ -9,6 +9,7 @@ import json
 import uuid
 from typing import List, Dict, Any
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import requests
 import time
@@ -20,6 +21,15 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Ortam değişkenleri
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
 MODEL_NAME = os.getenv("MODEL_NAME", "gemma3:27b")
@@ -28,10 +38,11 @@ PORT = int(os.getenv("PORT", 8008))
 # Pydantic modelleri
 class CardRequest(BaseModel):
     text: str
-    card_count: int = 5
+    num_cards: int = 5
 
 class Card(BaseModel):
     id: int
+    title: str
     content: str
     type: str
 
@@ -66,27 +77,28 @@ def call_ollama_for_cards(prompt: str) -> str:
         print(f"❌ Ollama çağrı hatası: {e}")
         raise HTTPException(status_code=500, detail=f"LLM çağrı hatası: {str(e)}")
 
-def generate_cards_content(text: str, card_count: int) -> List[Card]:
+def generate_cards_content(text: str, num_cards: int) -> List[Card]:
     """Metinden bilgi kartları üret"""
     
     prompt = f"""
-    Verilen metni analiz et ve {card_count} adet bilgi kartı oluştur.
+    Verilen metni analiz et ve {num_cards} adet bilgi kartı oluştur.
     
     Metin: {text}
     
     Her kart için:
-    1. Metinden önemli bilgileri çıkar
-    2. Tanım veya soru-cevap formatında yaz
-    3. Kısa ve öz olsun (1-2 cümle)
-    4. Anlaşılır ve öğretici olsun
+    1. Bir başlık/soru oluştur (title) - Kısa ve öz, 1 cümle
+    2. Kısa açıklama/cevap yaz (content) - MAKSIMUM 2-3 KISA CÜMLE (50-60 kelime)
+    3. Flashcard formatında düşün: Önde soru, arkada kısa cevap
+    4. Anlaşılır ve öz olsun, gereksiz detay verme
     
     JSON formatında döndür:
     {{
         "cards": [
             {{
                 "id": 1,
-                "content": "Kart içeriği buraya...",
-                "type": "question_answer" veya "definition"
+                "title": "Yapay zeka nedir?",
+                "content": "Yapay zeka, bilgisayar sistemlerinin insan benzeri düşünme ve öğrenme yeteneklerini taklit etmesidir.",
+                "type": "question_answer"
             }}
         ]
     }}
@@ -112,9 +124,10 @@ def generate_cards_content(text: str, card_count: int) -> List[Card]:
         
         # Card objelerine dönüştür
         cards = []
-        for i, card_data in enumerate(cards_data[:card_count], 1):
+        for i, card_data in enumerate(cards_data[:num_cards], 1):
             card = Card(
                 id=i,
+                title=card_data.get("title", f"Kart {i}"),
                 content=card_data.get("content", ""),
                 type=card_data.get("type", "definition")
             )
@@ -128,10 +141,11 @@ def generate_cards_content(text: str, card_count: int) -> List[Card]:
         
         # Fallback: Basit kartlar oluştur
         cards = []
-        for i in range(1, min(card_count + 1, 6)):
+        for i in range(1, min(num_cards + 1, 6)):
             card = Card(
                 id=i,
-                content=f"Bilgi kartı {i}: Metin analizi tamamlandı.",
+                title=f"Bilgi Kartı {i}",
+                content=f"Metin analizi tamamlandı.",
                 type="definition"
             )
             cards.append(card)
@@ -163,12 +177,12 @@ async def generate_cards(request: CardRequest):
         if not request.text.strip():
             raise HTTPException(status_code=400, detail="Metin boş olamaz")
         
-        if request.card_count < 1 or request.card_count > 20:
+        if request.num_cards < 1 or request.num_cards > 20:
             raise HTTPException(status_code=400, detail="Kart sayısı 1-20 arasında olmalı")
         
-        print(f"🎯 Bilgi kartları üretiliyor: {request.card_count} adet")
+        print(f"🎯 Bilgi kartları üretiliyor: {request.num_cards} adet")
         
-        cards, processing_time = generate_cards_content(request.text, request.card_count)
+        cards, processing_time = generate_cards_content(request.text, request.num_cards)
         
         return CardResponse(
             success=True,

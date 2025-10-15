@@ -1,4 +1,6 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Dict, Any
 import uvicorn
@@ -14,6 +16,19 @@ from datetime import datetime
 
 app = FastAPI(title="Template Rewrite Service", version="1.0.0")
 
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount static files
+os.makedirs("/app/outputs", exist_ok=True)
+app.mount("/outputs", StaticFiles(directory="/app/outputs"), name="outputs")
+
 # Ollama configuration
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
@@ -24,12 +39,12 @@ class ImzaKisi(BaseModel):
 class GerekceRequest(BaseModel):
     konu: str
     icerik_konusu: str
-    imza_atacaklar: List[ImzaKisi]
+    imza_atacaklar: List[ImzaKisi] = []
 
 class BelgenetRequest(BaseModel):
     konu: str
     icerik_konusu: str
-    imza_atacaklar: List[ImzaKisi]
+    imza_atacaklar: List[ImzaKisi] = []
     format_type: str = "belgenet"  # "gerekce" veya "belgenet"
 
 class TemplateResponse(BaseModel):
@@ -37,6 +52,7 @@ class TemplateResponse(BaseModel):
     message: str
     file_path: str
     filename: str
+    content: str
 
 @app.get("/health")
 async def health_check():
@@ -475,7 +491,8 @@ async def generate_document(request: BelgenetRequest):
                 success=True,
                 message="Belgenet evrak belgesi başarıyla oluşturuldu",
                 file_path=filepath,
-                filename=filename
+                filename=filename,
+                content=content
             )
         else:
             # Gerekçe formatında içerik oluştur
@@ -496,7 +513,8 @@ async def generate_document(request: BelgenetRequest):
                 success=True,
                 message="Gerekçe belgesi başarıyla oluşturuldu",
                 file_path=filepath,
-                filename=filename
+                filename=filename,
+                content=content
             )
         
     except Exception as e:
@@ -525,7 +543,8 @@ async def generate_gerekce(request: GerekceRequest):
             success=True,
             message="Gerekçe belgesi başarıyla oluşturuldu",
             file_path=filepath,
-            filename=filename
+            filename=filename,
+            content=content
         )
         
     except Exception as e:
@@ -559,4 +578,5 @@ async def download_file(filename: str):
         raise HTTPException(status_code=404, detail="Dosya bulunamadı")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8005)
+    PORT = int(os.getenv("PORT", 8007))
+    uvicorn.run(app, host="0.0.0.0", port=PORT)

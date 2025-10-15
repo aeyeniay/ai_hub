@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Hub - Yapay Zeka Servisleri</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">🤖 AI Hub</h1>
+            <p class="tagline">Yapay Zeka Servisleri</p>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar Menu -->
+        <aside class="sidebar">
+            <nav class="menu">
+                <h3 class="menu-title">📋 Servisler</h3>
+                
+                <!-- Görsel Servisleri -->
+                <div class="menu-section">
+                    <h4 class="section-title">🎨 Görsel İşleme</h4>
+                    <button class="menu-item active" data-module="detect">
+                        <span class="icon">🔍</span>
+                        <span class="text">Nesne Tespiti</span>
+                    </button>
+                    <button class="menu-item" data-module="vqa">
+                        <span class="icon">💬</span>
+                        <span class="text">Görsel Soru-Cevap</span>
+                    </button>
+                    <button class="menu-item" data-module="imggen">
+                        <span class="icon">🎨</span>
+                        <span class="text">Görsel Üretimi</span>
+                    </button>
+                </div>
+
+                <!-- Metin Servisleri -->
+                <div class="menu-section">
+                    <h4 class="section-title">📝 Metin İşleme</h4>
+                    <button class="menu-item" data-module="pii-masking">
+                        <span class="icon">🔒</span>
+                        <span class="text">Kişisel Veri Maskeleme</span>
+                    </button>
+                    <button class="menu-item" data-module="quiz">
+                        <span class="icon">❓</span>
+                        <span class="text">Quiz Oluşturma</span>
+                    </button>
+                    <button class="menu-item" data-module="template">
+                        <span class="icon">📄</span>
+                        <span class="text">Belge Oluşturma</span>
+                    </button>
+                    <button class="menu-item" data-module="infocards">
+                        <span class="icon">🃏</span>
+                        <span class="text">Bilgi Kartları</span>
+                    </button>
+                </div>
+
+                <!-- Tablo Servisleri -->
+                <div class="menu-section">
+                    <h4 class="section-title">📊 Tablo İşleme</h4>
+                    <button class="menu-item" data-module="chart">
+                        <span class="icon">📈</span>
+                        <span class="text">Tablodan Grafik Üretimi</span>
+                    </button>
+                    <button class="menu-item" data-module="table">
+                        <span class="icon">📋</span>
+                        <span class="text">Tablo Analizi</span>
+                    </button>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Content Area -->
+        <main class="content">
+            <div id="module-container">
+                <!-- Modüller buraya yüklenecek -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+    <script type="module" src="js/modules/detect.js"></script>
+    <script type="module" src="js/modules/vqa.js"></script>
+    <script type="module" src="js/modules/imggen.js"></script>
+    <script type="module" src="js/modules/pii-masking.js"></script>
+    <script type="module" src="js/modules/quiz.js"></script>
+    <script type="module" src="js/modules/template.js"></script>
+    <script type="module" src="js/modules/infocards.js"></script>
+    <script type="module" src="js/modules/chart.js"></script>
+    <script type="module" src="js/modules/table.js"></script>
+</body>
+</html>
+

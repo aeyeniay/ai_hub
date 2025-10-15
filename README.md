@@ -2,7 +2,32 @@
 
 Bu proje, görsel üretim, nesne tespiti, metin işleme ve tablo analizi servislerini içeren kapsamlı bir AI hub'ıdır.
 
-## 🚀 Servisler
+## 🚀 Hızlı Başlangıç
+
+### 1. Gerekli Servisleri Başlat
+```bash
+# 1. Ollama Proxy'yi başlat (ayrı terminal)
+py ollama_proxy.py
+
+# 2. Docker servislerini başlat
+docker compose up -d
+
+# 3. Frontend'i başlat (ayrı terminal)
+cd frontend
+py -m http.server 3000
+```
+
+### 2. Test Et
+- **Frontend**: http://localhost:3000
+- **Detect Servisi**: http://localhost:8003/health
+- **Tüm Servisler**: README'deki API örneklerini kullan
+
+### 3. Sorun Giderme
+- **500 Hatası**: Ollama proxy'nin çalıştığından emin olun
+- **Bağlantı Sorunu**: `curl http://localhost:11434/api/tags` ile test edin
+- **Loglar**: `docker compose logs detect -f` ile izleyin
+
+## 📋 Servisler
 
 ### 🎨 Görsel Servisleri
 - **imggen** (Port 8001): SDXL-Turbo ile görsel üretim (GPU hızlandırmalı, offline capable)
@@ -12,7 +37,7 @@ Bu proje, görsel üretim, nesne tespiti, metin işleme ve tablo analizi servisl
 ### 📝 Metin Servisleri
 - **pii-masking** (Port 8000): Gemma3:27b ile kişisel bilgi maskeleme (Ollama üzerinden)
 - **quiz-generator** (Port 8006): Gemma3:27b ile interaktif quiz oluşturma ve oynama (Ollama üzerinden)
-- **template-rewrite** (Port 8005): Word şablonları ile belge oluşturma - Gerekçe ve Belgenet formatları (Ollama üzerinden)
+- **template-rewrite** (Port 8007): Word şablonları ile belge oluşturma - Gerekçe ve Belgenet formatları (Ollama üzerinden)
 - **info-cards** (Port 8008): Gemma3:27b ile metin analizi ve bilgi kartları üretimi (Ollama üzerinden)
 
 ### 📊 Tablo İşlemleri
@@ -35,11 +60,20 @@ Bu proje, görsel üretim, nesne tespiti, metin işleme ve tablo analizi servisl
 
 ## ⚠️ Önemli Notlar
 
+### Windows Docker Desktop Kullanımı
+Bu proje **Windows Docker Desktop** ortamında çalışmak üzere yapılandırılmıştır:
+
+- **Ollama Proxy Gerekli**: Container'lar external Ollama sunucusuna `ollama_proxy.py` üzerinden bağlanır
+- **Host Network Modu**: Windows'ta çalışmadığı için kaldırılmıştır
+- **Port Mapping**: Tüm servisler explicit port mapping kullanır
+- **Extra Hosts**: Container'lar `host.docker.internal` kullanarak Windows host'a erişir
+
 ### Ollama Yönetimi
-- **Kritik**: Ollama servisi bazen yeniden başlatılması gerekebilir
-- Detect servisi timeout verirse: `sudo systemctl restart ollama`
-- Ollama host'ta çalışmalı (127.0.0.1:11434)
-- Container'lar `network_mode: "host"` kullanır
+- **External Ollama**: Dış Ollama sunucusu kullanılır (IP adresi `ollama_proxy.py` dosyasında yapılandırılır)
+- **Proxy Başlatma**: `py ollama_proxy.py` (localhost:11434 dinler)
+- **Container Erişimi**: Container'lar → `host.docker.internal:11434` → Proxy → External Ollama
+- **Model**: `gemma3:27b` kullanılır (external sunucuda yüklü olmalı)
+- **⚠️ Önemli**: Proxy URL'de `/api` prefix'i OLMAMALI (çakışma yaratır)
 
 ### GPU Kullanımı
 - **imggen**: CUDA GPU hızlandırması kullanır (zorunlu)
@@ -52,45 +86,44 @@ Bu proje, görsel üretim, nesne tespiti, metin işleme ve tablo analizi servisl
 - **chart-generator**: Ollama üzerinden çalışır (GPU ile performans artışı)
 - **table-analyzer**: Ollama üzerinden çalışır (GPU ile performans artışı)
 
-## 🛠️ Kurulum
+## 🛠️ Kurulum (Windows Docker Desktop)
 
-### 1. Ollama Kurulumu (Host)
-```bash
-# Ollama'yı host'ta kur ve çalıştır
-curl -fsSL https://ollama.ai/install.sh | sh
-sudo systemctl enable ollama
-sudo systemctl start ollama
+### 1. Ön Gereksinimler
+- **Docker Desktop for Windows** kurulu ve çalışır olmalı
+- **Python 3.9+** kurulu olmalı (proxy için)
+- **Git Bash** önerilir (PowerShell'de encoding sorunları olabilir)
+- **External Ollama sunucusu** erişilebilir olmalı (IP adresi `ollama_proxy.py` dosyasında yapılandırılır)
 
-# Gerekli modelleri indir
-ollama pull gemma3:27b    # Detect servisi için
-ollama pull qwen2.5vl:32b # VQA servisi için
-```
-
-### 2. NVIDIA Docker Kurulumu
-```bash
-# NVIDIA Container Toolkit kur
-distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
-curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
-
-sudo apt-get update
-sudo apt-get install -y nvidia-docker2
-sudo systemctl restart docker
-```
-
-### 3. Proje Kurulumu
+### 2. Proje Kurulumu
 ```bash
 # Projeyi klonla
 git clone https://github.com/aeyeniay/ai_hub.git
 cd ai_hub
 
-# Otomatik kurulum (önerilen)
-chmod +x setup.sh
-./setup.sh
+# .env dosyasını yapılandır
+# OLLAMA_BASE_URL=http://host.docker.internal:11434
+# TEMPLATE_REWRITE_PORT=8007
 
-# Manuel kurulum (alternatif)
-cp .env.example .env
+# Gerekli Python paketlerini kur (proxy için)
+pip install flask requests
+
+# Ollama proxy'yi başlat (ayrı terminal)
+py ollama_proxy.py
+
+# Docker servisleri başlat
 docker compose up -d
+
+# Servislerin durumunu kontrol et
+docker compose ps
+```
+
+### 3. Test JSON Dosyalarını Oluştur
+```bash
+# test_belgenet.json
+echo '{"konu":"Test Belgenet","icerik_konusu":"Test icerigi","format_type":"belgenet"}' > test_belgenet.json
+
+# test_gerekce.json  
+echo '{"konu":"Test Gerekce","icerik_konusu":"Test icerigi","imza_atacaklar":[{"isim":"Test","unvan":"Mudur"}]}' > test_gerekce.json
 ```
 
 ## 📁 Dizin Yapısı
@@ -127,99 +160,98 @@ ai_hub/
 
 ## 🔧 API Kullanımı
 
-### Görsel Üretim (imggen)
-```bash
-curl -X POST http://localhost:8001/generate \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "a beautiful sunset over mountains"}'
-```
-
-### Nesne Tespiti (detect)
-```bash
-curl -X POST http://localhost:8003/detect \
-  -F "image=@data/uploads/images/deneme2.jpg" \
-  -F "confidence=0.3" \
-  -F "max_objects=15"
-```
-
-**Çıktı örneği:**
-```json
-{
-  "status": "success",
-  "model": "gemma3:27b",
-  "total_objects": 10,
-  "objects": [
-    {
-      "name": "araba",
-      "confidence": 95,
-      "location": "Merkez",
-      "description": "Açık bagajıyla çimenlik bir tepede park edilmiş gümüş renkli bir SUV."
-    },
-    {
-      "name": "erkek",
-      "confidence": 90,
-      "location": "Sol-Merkez",
-      "description": "Açık araba bagajının kenarında oturan, ceket ve bot giyen bir adam."
-    }
-  ]
-}
-```
-
-### PII Maskeleme (pii-masking)
+### 1. PII Masking (8000) - Kişisel Veri Maskeleme
 ```bash
 curl -X POST http://localhost:8000/mask \
   -H "Content-Type: application/json" \
-  -d '{"text": "Ahmet Yılmaz 12345678901 numaralı TCKN ile İstanbulda yaşıyor. E-posta: ahmet@example.com"}'
+  -d '{"text":"Benim adim Ahmet Yeniay ve telefon numaram 0532 123 4567"}'
 ```
 
-### Quiz Oluşturma (quiz-generator)
+### 2. Image Generator (8001) - Görsel Oluşturma
+```bash
+curl -X POST http://localhost:8001/generate \
+  -H "Content-Type: application/json" \
+  -d '{"prompt":"a beautiful sunset over mountains"}'
+```
+> Görseller: `data/outputs/images/`
+
+### 3. VQA (8002) - Görsel Soru Cevaplama
+```bash
+# Adım 1: Görseli yükle
+curl -X POST http://localhost:8002/upload \
+  -F "image=@data/uploads/images/deneme3.webp"
+
+# Adım 2: Dönen session_id ile soru sor
+curl -X POST http://localhost:8002/ask \
+  -F "question=Bu gorselde ne goruyorsun?" \
+  -F "session_id=YUKARDAKI_SESSION_ID"
+```
+
+### 4. Detect (8003) - Nesne Tespiti (Türkçe)
+```bash
+curl -X POST http://localhost:8003/detect \
+  -F "image=@data/uploads/images/deneme3.webp" \
+  -F "confidence=0.3"
+```
+
+### 5. Quiz Generator (8006) - Quiz Oluşturma
 ```bash
 curl -X POST http://localhost:8006/generate \
   -H "Content-Type: application/json" \
-  -d '{"text": "Sıfır atık projesi çevre koruma için önemlidir.", "num_questions": 3}'
+  -d '{"text":"Turkiye Cumhuriyeti 1923 yilinda kurulmustur. Baskent Ankara secilmistir. Mustafa Kemal Ataturk cumhuriyetin kurucusudur.","num_questions":3,"difficulty":"medium"}'
 ```
 
-### Bilgi Kartları (info-cards)
+### 6. Template Rewrite (8007) - Belge Oluşturma
+**Belgenet:**
+```bash
+curl -X POST http://localhost:8007/generate-document \
+  -H "Content-Type: application/json" \
+  -d @test_belgenet.json \
+  --max-time 120
+```
+
+**Gerekçe:**
+```bash
+curl -X POST http://localhost:8007/generate-gerekce \
+  -H "Content-Type: application/json" \
+  -d @test_gerekce.json \
+  --max-time 120
+```
+> Belgeler: `data/outputs/text/`
+
+### 7. Info Cards (8008) - Bilgi Kartları
 ```bash
 curl -X POST http://localhost:8008/generate-cards \
   -H "Content-Type: application/json" \
-  -d '{"text": "Yapay zeka teknolojisi hakkında bilgi", "num_cards": 5}'
+  -d '{"text":"Yapay zeka nedir? Yapay zeka, bilgisayarlarin insan gibi dusunmesini saglayan bir teknolojidir.","num_cards":5}'
 ```
 
-### Grafik Üretimi (chart-generator)
+### 8. Chart Generator (8009) - Grafik Oluşturma
 ```bash
 curl -X POST http://localhost:8009/generate-charts \
   -H "Content-Type: application/json" \
-  -d @test_chart_generator.json
+  -d '{"table_data":[{"ay":"Ocak","satis":65},{"ay":"Subat","satis":59},{"ay":"Mart","satis":80}],"max_charts":3,"output_format":"png"}'
 ```
+> Grafikler: `data/outputs/table/`
 
-### Tablo Analizi (table-analyzer)
+### 9. Table Analyzer (8010) - Tablo Analizi
 ```bash
 curl -X POST http://localhost:8010/analyze-table \
   -H "Content-Type: application/json" \
-  -d @test_table_analyzer.json
+  -d '{"table_data":[{"Urun":"Laptop","Ocak":150,"Subat":180,"Mart":200}],"language":"turkish","output_format":"text"}'
 ```
 
-### Interaktif Görselden Soru-Cevap (vqa)
+### Health Check (Tüm Servisler)
 ```bash
-# 1. Görsel yükle ve session oluştur
-curl -X POST http://localhost:8002/upload \
-  -F "image=@data/uploads/images/deneme2.jpg"
-
-# 2. Session ID ile soru sor
-curl -X POST http://localhost:8002/ask \
-  -F "question=Bu görselde ne görüyorsun?" \
-  -F "session_id=YOUR_SESSION_ID"
-
-# 3. Session durumunu kontrol et
-curl "http://localhost:8002/status?session_id=YOUR_SESSION_ID"
-
-# 4. Konuşma geçmişini gör
-curl "http://localhost:8002/history?session_id=YOUR_SESSION_ID"
-
-# 5. Session'ı temizle
-curl -X POST http://localhost:8002/clear \
-  -F "session_id=YOUR_SESSION_ID"
+curl http://localhost:8000/health  # PII Masking
+curl http://localhost:8001/health  # Image Generator
+curl http://localhost:8002/health  # VQA
+curl http://localhost:8003/health  # Detect
+curl http://localhost:8006/health  # Quiz Generator
+curl http://localhost:8007/health  # Template Rewrite
+curl http://localhost:8008/health  # Info Cards
+curl http://localhost:8009/health  # Chart Generator
+curl http://localhost:8010/health  # Table Analyzer
 ```
 
 **Özellikler:**
@@ -346,50 +378,97 @@ graph TB
     style L fill:#f8f9fa
 ```
 
-## 🐛 Sorun Giderme
+## 🐛 Sorun Giderme (Windows)
 
-### Ollama Timeout Hatası
+### Ollama Proxy Çalışmıyor
 ```bash
-# Ollama servisini yeniden başlat
-sudo systemctl restart ollama
+# Proxy'nin çalıştığını kontrol et
+curl http://localhost:11434/api/tags
 
-# Servis durumunu kontrol et
-sudo systemctl status ollama
+# Proxy'yi yeniden başlat
+# Ctrl+C ile durdur, sonra:
+py ollama_proxy.py
 
-# Modellerin yüklü olduğunu kontrol et
-ollama list
+# External Ollama'ya erişimi kontrol et
+# (IP adresini ollama_proxy.py dosyasından alın)
+curl http://[OLLAMA_IP]/api/tags
+
+# ⚠️ ÖNEMLİ: Proxy URL'de /api prefix'i olmamalı!
+# Yanlış: OLLAMA_SERVER = "http://[IP]/api"
+# Doğru: OLLAMA_SERVER = "http://[IP]"
 ```
 
-### GPU Hatası (imggen için)
+### Container Ollama'ya Bağlanamıyor
 ```bash
-# NVIDIA Docker çalışıyor mu kontrol et
-docker run --rm --gpus all nvidia/cuda:12.1.1-base-ubuntu22.04 nvidia-smi
+# Container içinden test et
+docker exec ai_hub-detect-1 curl http://host.docker.internal:11434/api/tags
 
-# GPU kullanımını kontrol et
-nvidia-smi
+# .env dosyasını kontrol et
+cat .env | grep OLLAMA_BASE_URL
+# Olması gereken: OLLAMA_BASE_URL=http://host.docker.internal:11434
+
+# Container'ı restart et
+docker compose restart detect
 ```
 
 ### Port Çakışması
 ```bash
-# Hangi portlar kullanılıyor kontrol et
-netstat -tlnp | grep :800
+# Windows'ta port kullanımını kontrol et
+netstat -ano | findstr :8007
 
-# Container'ları kontrol et
-docker ps
+# Eğer port 8005 kullanılamıyorsa (PID 4), .env'de değiştir:
+# TEMPLATE_REWRITE_PORT=8007
+```
+
+### Template Rewrite "Empty Reply" Hatası
+```bash
+# Port uyuşmazlığı olabilir, rebuild et:
+docker compose up -d --build template-rewrite
+
+# Health check yap
+curl http://localhost:8007/health
+```
+
+### Türkçe Karakter Sorunları (Git Bash)
+```bash
+# PowerShell yerine Git Bash kullan
+# JSON dosyası kullan inline yerine:
+curl -X POST http://localhost:8007/generate-document \
+  -d @test_belgenet.json
+```
+
+### Servis Loglarını Kontrol Et
+```bash
+# Tüm servislerin loglarını gör
+docker compose logs -f
+
+# Belirli servisin loglarını gör
+docker compose logs -f template-rewrite
+docker compose logs -f detect
+
+# Detect servisi için detaylı hata logları
+# Debug modu aktif - hata detayları görüntülenir
+docker compose logs detect --tail=50
 ```
 
 ### Servis Sağlık Kontrolü
 ```bash
 # Tüm servislerin sağlığını kontrol et
+curl http://localhost:8000/health  # PII Masking
 curl http://localhost:8001/health  # ImageGen
 curl http://localhost:8002/health  # VQA
 curl http://localhost:8003/health  # Detect
-curl http://localhost:8000/health  # PII Masking
 curl http://localhost:8006/health  # Quiz Generator
+curl http://localhost:8007/health  # Template Rewrite
+curl http://localhost:8008/health  # Info Cards
+curl http://localhost:8009/health  # Chart Generator
+curl http://localhost:8010/health  # Table Analyzer
 ```
 
 ## 📝 Özellikler
 
+- **Windows Docker Desktop Desteği**: Windows ortamında sorunsuz çalışır
+- **Proxy Tabanlı Ollama Bağlantısı**: External Ollama sunucusuna proxy üzerinden güvenli bağlantı
 - **Türkçe Destek**: Detect, PII-Masking ve Quiz servisleri Türkçe doğal dil işleme yapar
 - **GPU Hızlandırma**: ImageGen servisi CUDA GPU kullanır
 - **Offline Capability**: ImageGen servisi internet olmadan çalışabilir
@@ -404,6 +483,7 @@ curl http://localhost:8006/health  # Quiz Generator
 - **Dinamik Belge Üretimi**: LLM ile akıllı belge oluşturma (Gerekçe ve Belgenet formatları)
 - **Çoklu Format Desteği**: Gerekçe belgeleri (imzalı) ve Belgenet evrakları (imzasız)
 - **Bilgi Kartları Üretimi**: Metin analizi ile öğretici bilgi kartları oluşturma
+- **Grafik ve Tablo Analizi**: JSON/CSV/Excel dosyalarından otomatik grafik üretimi ve detaylı analiz
 
 ## 🔧 Geliştirme
 
@@ -604,6 +684,26 @@ curl -X POST http://localhost:8006/answer \
 
 ### Sistem Akış Diyagramı (Text Servisleri)
 Text servisleri eklendikten sonra ayrı bir diyagram oluşturulacak.
+
+## ✅ Sistem Durumu (Güncel)
+
+### Çalışan Servisler
+- ✅ **Ollama Proxy**: localhost:11434 (Düzeltildi - /api prefix sorunu çözüldü)
+- ✅ **Detect Servisi**: localhost:8003 (Debug modu aktif)
+- ✅ **Frontend**: localhost:3000 (Python HTTP Server)
+- ✅ **Docker Servisleri**: Tüm servisler çalışıyor
+- ✅ **External Ollama**: Erişilebilir (IP adresi yapılandırılmış)
+
+### Son Düzeltmeler
+- 🔧 **Ollama Proxy URL**: `/api` prefix'i kaldırıldı
+- 🔧 **Debug Logging**: Detect servisine detaylı hata loglama eklendi
+- 🔧 **Error Handling**: Exception handling iyileştirildi
+
+### Test Edilen Özellikler
+- ✅ Nesne Tespiti (Detect) - Çalışıyor
+- ✅ Frontend Arayüzü - Çalışıyor
+- ✅ Ollama Bağlantısı - Çalışıyor
+- ✅ Docker Container'ları - Çalışıyor
 
 ## 📄 Lisans
 

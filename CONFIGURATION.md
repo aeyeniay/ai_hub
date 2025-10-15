@@ -2,7 +2,71 @@
 
 Bu rehber AI Hub servislerini farklı ortamlarda kurmak ve konfigüre etmek için hazırlanmıştır.
 
-## 🚀 Hızlı Kurulum
+## 🪟 Windows Docker Desktop Kurulumu
+
+### Ön Gereksinimler
+- Docker Desktop for Windows (çalışır durumda)
+- Python 3.9+ (proxy için)
+- Git Bash (önerilir)
+- External Ollama sunucusu (`http://172.17.28.121/api`)
+
+### Kurulum Adımları
+
+#### 1. Projeyi Klonla
+```bash
+git clone https://github.com/aeyeniay/ai_hub.git
+cd ai_hub
+```
+
+#### 2. .env Dosyasını Yapılandır
+```bash
+# .env dosyası oluştur
+cat > .env << 'EOF'
+# Ollama Configuration (Windows Proxy)
+OLLAMA_BASE_URL=http://host.docker.internal:11434
+
+# Model Configuration
+GEMMA_MODEL=gemma3:27b
+QWEN_VL_MODEL=qwen2.5vl:32b
+IMGGEN_MODEL=stabilityai/sdxl-turbo
+
+# Port Configuration
+PII_MASKING_PORT=8000
+IMGGEN_PORT=8001
+VQA_PORT=8002
+DETECT_PORT=8003
+QUIZ_GENERATOR_PORT=8006
+TEMPLATE_REWRITE_PORT=8007
+INFO_CARDS_PORT=8008
+CHART_GENERATOR_PORT=8009
+TABLE_ANALYZER_PORT=8010
+EOF
+```
+
+#### 3. Ollama Proxy'yi Başlat
+```bash
+# Gerekli paketleri kur
+pip install flask requests
+
+# Proxy'yi başlat (ayrı terminal)
+python ollama_proxy.py
+```
+
+#### 4. Docker Servisleri Başlat
+```bash
+docker compose up -d
+```
+
+#### 5. Test JSON Dosyalarını Oluştur
+```bash
+# Belgenet testi için
+echo '{"konu":"Test Belgenet","icerik_konusu":"Test icerigi","format_type":"belgenet"}' > test_belgenet.json
+
+# Gerekçe testi için
+echo '{"konu":"Test Gerekce","icerik_konusu":"Test icerigi","imza_atacaklar":[{"isim":"Test","unvan":"Mudur"}]}' > test_gerekce.json
+```
+
+## 🚀 Hızlı Kurulum (Linux/Mac)
 
 ### Otomatik Kurulum (Önerilen)
 ```bash
@@ -55,7 +119,7 @@ DETECT_PORT=8003
 
 # Metin Servisleri
 PII_MASKING_PORT=8000
-TEMPLATE_REWRITE_PORT=8005
+TEMPLATE_REWRITE_PORT=8007
 QUIZ_GENERATOR_PORT=8006
 INFO_CARDS_PORT=8008
 
@@ -73,7 +137,7 @@ DETECT_PORT=8003
 
 # Metin Servisleri
 PII_MASKING_PORT=8000
-TEMPLATE_REWRITE_PORT=8005
+TEMPLATE_REWRITE_PORT=8007
 QUIZ_GENERATOR_PORT=8006
 INFO_CARDS_PORT=8008
 
@@ -203,7 +267,7 @@ curl http://localhost:8001/health | jq
 ### Template-Rewrite Konfigürasyonu
 ```bash
 # Template-rewrite servisi portu
-TEMPLATE_REWRITE_PORT=8005
+TEMPLATE_REWRITE_PORT=8007
 
 # Şablon dosyaları için volume
 ./services/text/template-rewrite/templates:/app/templates

@@ -115,7 +115,7 @@ template-rewrite/
 
 ### Gerekçe Belgesi Oluşturma
 ```bash
-curl -X POST http://localhost:8005/generate-document \
+curl -X POST http://localhost:8007/generate-document \
   -H "Content-Type: application/json" \
   -d '{
     "konu": "Yapay Zeka Eğitim Programı Gerekçesi",
@@ -136,7 +136,7 @@ curl -X POST http://localhost:8005/generate-document \
 
 ### Belgenet Evrakı Oluşturma
 ```bash
-curl -X POST http://localhost:8005/generate-document \
+curl -X POST http://localhost:8007/generate-document \
   -H "Content-Type: application/json" \
   -d '{
     "konu": "Kurumların İngilizce Karşılıklarının Bildirilmesi",
@@ -151,7 +151,7 @@ curl -X POST http://localhost:8005/generate-document \
 import requests
 
 # Gerekçe belgesi oluşturma
-response = requests.post('http://localhost:8005/generate-gerekce', 
+response = requests.post('http://localhost:8007/generate-gerekce', 
     json={
         'konu': 'Sıfır Atık Projesi Uygulama Gerekçesi',
         'icerik_konusu': 'Çevre koruma ve sürdürülebilirlik için...',
@@ -186,7 +186,7 @@ gerekceler = [
 ]
 
 for gerekce in gerekceler:
-    response = requests.post('http://localhost:8005/generate-gerekce',
+    response = requests.post('http://localhost:8007/generate-gerekce',
                            json=gerekce)
     result = response.json()
     print(f"Oluşturulan: {result['filename']}")
@@ -200,7 +200,7 @@ for gerekce in gerekceler:
 docker compose up template-rewrite -d
 
 # Sağlık kontrolü
-curl http://localhost:8005/health
+curl http://localhost:8007/health
 ```
 
 ### Yerel Geliştirme
