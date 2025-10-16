@@ -1,4 +1,4 @@
-// Table Analyzer Module - AI-Powered Table Analysis
+// Table Analyzer Module - AI-Powered Table Analysis with VQA-style Chat
 
 export default class TableModule {
     constructor(container) {
@@ -17,104 +17,108 @@ export default class TableModule {
             <div class="module-header">
                 <h2 class="module-title">📋 Tablo Analizi</h2>
                 <p class="module-description">
-                    CSV/Excel tablolarınızı yükleyin ve yapay zeka ile analiz edin. Sorularınızı sorun, içgörüler elde edin.
+                    CSV/Excel tablolarınızı yükleyin ve yapay zeka ile interaktif sohbet edin. Sorularınızı sorun, içgörüler elde edin.
                 </p>
             </div>
 
-            <div class="table-container">
-                <!-- Input Section -->
-                <div class="table-input-section">
-                    <div class="section-header">
-                        <h3 class="section-title">📊 Veri Girişi</h3>
+            <!-- Upload Section -->
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-icon">📊</div>
+                <h3 class="upload-title">Tablo Dosyası Yükle</h3>
+                <p class="upload-subtitle">
+                    CSV/Excel dosyasını buraya sürükleyin veya tıklayarak seçin
+                    <br>
+                    <small>Desteklenen formatlar: CSV, XLS, XLSX</small>
+                </p>
+                <input type="file" id="fileInput" class="file-input" accept=".csv,.xls,.xlsx">
+                <div style="display: flex; gap: 0.75rem; justify-content: center; margin-top: 1rem;">
+                    <button class="btn btn-primary" id="selectFileBtn">
+                        <span>📁</span>
+                        <span>Dosya Seç</span>
+                    </button>
+                    <button class="btn btn-secondary" id="sampleBtn">
+                        <span>📋</span>
+                        <span>Örnek CSV Yükle</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat Section (hidden by default) -->
+            <div class="vqa-chat-section" id="chatSection" style="display: none;">
+                <!-- Table Preview -->
+                <div class="vqa-image-preview">
+                    <div class="table-preview-card">
+                        <div class="table-preview-header">
+                            <h4>📊 Tablo Önizleme</h4>
+                        </div>
+                        <div class="table-preview-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">📄 Dosya:</span>
+                                <span class="stat-value" id="fileName">-</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">📏 Satır:</span>
+                                <span class="stat-value" id="rowCount">-</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">📊 Sütun:</span>
+                                <span class="stat-value" id="columnCount">-</span>
+                            </div>
+                        </div>
+                        <div class="table-preview-content" id="tablePreviewContent"></div>
                     </div>
-                    
-                    <!-- File Upload -->
-                    <div class="upload-area" id="uploadArea">
-                        <div class="upload-icon">📁</div>
-                        <div class="upload-text">
-                            <div class="upload-title">CSV dosyasını sürükleyip bırakın</div>
-                            <div class="upload-subtitle">veya tıklayarak dosya seçin</div>
-                        </div>
-                        <input type="file" id="fileInput" accept=".csv" style="display: none;">
-                    </div>
-                    
-                    <div class="file-info" id="fileInfo" style="display: none;">
-                        <div class="info-item">
-                            <span class="info-label">📄 Dosya:</span>
-                            <span class="info-value" id="fileName">-</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">📏 Satır Sayısı:</span>
-                            <span class="info-value" id="rowCount">-</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">📊 Sütun Sayısı:</span>
-                            <span class="info-value" id="columnCount">-</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Data Preview -->
-                    <div class="data-preview" id="dataPreview" style="display: none;">
-                        <div class="preview-header">
-                            <h4 class="preview-title">📋 Veri Önizleme</h4>
-                        </div>
-                        <div class="preview-table-wrapper">
-                            <table class="preview-table" id="previewTable"></table>
-                        </div>
-                    </div>
-                    
-                    <!-- Quick Questions -->
-                    <div class="quick-questions" id="quickQuestions" style="display: none;">
-                        <div class="quick-questions-title">💡 Örnek Sorular:</div>
-                        <button class="quick-question-btn" data-question="Bu tablodaki toplam değer nedir?">
-                            📊 Toplam değer
-                        </button>
-                        <button class="quick-question-btn" data-question="En yüksek ve en düşük değerler nelerdir?">
-                            📈 Min/Max değerler
-                        </button>
-                        <button class="quick-question-btn" data-question="Bu verilerden ne gibi çıkarımlar yapılabilir?">
-                            🔍 İçgörüler
-                        </button>
-                        <button class="quick-question-btn" data-question="Bu verilerdeki trendler nelerdir?">
-                            📉 Trendler
-                        </button>
-                    </div>
-                    
-                    <div class="table-actions">
-                        <button class="btn btn-secondary" id="clearBtn">
-                            <span>🗑️</span>
-                            <span>Temizle</span>
-                        </button>
-                        <button class="btn btn-secondary" id="sampleBtn">
-                            <span>📋</span>
-                            <span>Örnek CSV Yükle</span>
+                    <div class="vqa-session-info">
+                        <span class="vqa-session-badge">
+                            <span>🔗</span>
+                            <span id="sessionInfo">Oturum aktif</span>
+                        </span>
+                        <button class="btn btn-secondary btn-sm" id="newTableBtn">
+                            <span>🔄</span>
+                            <span>Yeni Tablo</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Analysis Section -->
-                <div class="table-analysis-section" id="analysisSection">
-                    <div class="section-header">
-                        <h3 class="section-title">💬 Soru & Cevap</h3>
-                    </div>
-                    
-                    <div class="analysis-chat" id="analysisChat">
-                        <div class="empty-state" id="emptyState">
-                            <div class="empty-icon">📋</div>
-                            <div class="empty-text">CSV dosyası yükleyin ve sorularınızı sorun</div>
+                <!-- Chat Messages -->
+                <div class="vqa-chat-container">
+                    <div class="vqa-chat-messages" id="chatMessages">
+                        <div class="vqa-welcome-message">
+                            <div class="vqa-assistant-avatar">🤖</div>
+                            <div class="vqa-message-content">
+                                <strong>Yapay Zeka Asistan</strong>
+                                <p>Merhaba! Tablonuz hakkında sorularınızı sorabilirsiniz. Size yardımcı olmaktan mutluluk duyarım!</p>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="question-input-wrapper" id="questionInputWrapper" style="display: none;">
+
+                    <!-- Quick Questions -->
+                    <div class="vqa-quick-questions" id="quickQuestions">
+                        <div class="vqa-quick-title">💡 Hızlı Sorular:</div>
+                        <button class="vqa-quick-btn" data-question="Bu tablodaki toplam değer nedir?">
+                            Bu tablodaki toplam değer nedir?
+                        </button>
+                        <button class="vqa-quick-btn" data-question="En yüksek ve en düşük değerler nelerdir?">
+                            En yüksek ve en düşük değerler nelerdir?
+                        </button>
+                        <button class="vqa-quick-btn" data-question="Bu verilerden ne gibi çıkarımlar yapılabilir?">
+                            Bu verilerden ne gibi çıkarımlar yapılabilir?
+                        </button>
+                        <button class="vqa-quick-btn" data-question="Bu tablodaki trendler nelerdir?">
+                            Bu tablodaki trendler nelerdir?
+                        </button>
+                    </div>
+
+                    <!-- Input Area -->
+                    <div class="vqa-input-area">
                         <textarea 
                             id="questionInput" 
-                            class="question-input"
-                            placeholder="Tablo hakkında soru sorun..."
+                            class="vqa-input" 
+                            placeholder="Sorunuzu buraya yazın..."
                             rows="2"
                         ></textarea>
-                        <button class="btn btn-primary" id="askBtn" disabled>
-                            <span>🔍</span>
-                            <span>Analiz Et</span>
+                        <button class="btn btn-primary" id="askBtn">
+                            <span>📤</span>
+                            <span>Gönder</span>
                         </button>
                     </div>
                 </div>
@@ -125,257 +129,176 @@ export default class TableModule {
     }
     
     addTableStyles() {
-        if (document.getElementById('table-styles')) return;
+        if (document.getElementById('table-vqa-styles')) return;
         
         const style = document.createElement('style');
-        style.id = 'table-styles';
+        style.id = 'table-vqa-styles';
         style.textContent = `
-            .table-container {
+            /* VQA Chat Section Layout */
+            .vqa-chat-section {
                 display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 2rem;
-                height: calc(100vh - 250px);
+                grid-template-columns: 400px 1fr;
+                gap: 1.5rem;
+                margin-top: 2rem;
             }
             
-            .table-input-section,
-            .table-analysis-section {
+            .vqa-image-preview {
+                position: sticky;
+                top: 2rem;
+                height: fit-content;
+            }
+            
+            .vqa-session-info {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .vqa-session-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.5rem 1rem;
                 background: var(--bg-secondary);
-                padding: 1.5rem;
-                border-radius: 12px;
+                border-radius: 8px;
+                font-size: 0.875rem;
+                font-weight: 600;
+                color: var(--text-primary);
+            }
+            
+            .btn-sm {
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+            }
+            
+            /* Chat Container */
+            .vqa-chat-container {
                 display: flex;
                 flex-direction: column;
-                gap: 1.5rem;
+                height: 600px;
+            }
+            
+            .vqa-chat-messages {
+                flex: 1;
                 overflow-y: auto;
-            }
-            
-            .table-analysis-section {
-                max-height: calc(100vh - 250px);
-            }
-            
-            .upload-area {
-                border: 2px dashed var(--border-color);
+                padding: 1.5rem;
+                background: var(--bg-secondary);
                 border-radius: 12px;
-                padding: 2rem;
-                text-align: center;
-                cursor: pointer;
-                transition: all 0.3s;
-                background: white;
+                margin-bottom: 1rem;
             }
             
-            .upload-area:hover,
-            .upload-area.dragover {
-                border-color: var(--primary-color);
-                background: #f8f9ff;
+            /* Messages */
+            .vqa-welcome-message,
+            .vqa-user-message,
+            .vqa-assistant-message {
+                display: flex;
+                gap: 1rem;
+                margin-bottom: 1.5rem;
             }
             
-            .upload-icon {
-                font-size: 2.5rem;
-                margin-bottom: 0.75rem;
+            .vqa-user-message {
+                flex-direction: row-reverse;
             }
             
-            .upload-title {
-                font-size: 1rem;
+            .vqa-user-message .vqa-message-content {
+                text-align: right;
+            }
+            
+            .vqa-assistant-avatar,
+            .vqa-user-avatar {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.25rem;
+                flex-shrink: 0;
+            }
+            
+            .vqa-assistant-avatar {
+                background: var(--primary-color);
+                color: white;
+            }
+            
+            .vqa-user-avatar {
+                background: var(--secondary-color);
+                color: white;
+            }
+            
+            .vqa-message-content {
+                flex: 1;
+            }
+            
+            .vqa-message-content strong {
+                display: block;
+                margin-bottom: 0.5rem;
+                color: var(--text-primary);
+            }
+            
+            .vqa-message-content p {
+                color: var(--text-secondary);
+                line-height: 1.6;
+                margin: 0;
+            }
+            
+            .vqa-formatted-text {
+                color: var(--text-secondary);
+                line-height: 1.6;
+            }
+            
+            .vqa-formatted-text p {
+                margin: 0.5rem 0;
+            }
+            
+            .vqa-formatted-text strong {
+                color: var(--text-primary);
+                font-weight: 700;
+            }
+            
+            /* Quick Questions */
+            .vqa-quick-questions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                padding: 1rem;
+                background: var(--bg-secondary);
+                border-radius: 12px;
+                margin-bottom: 1rem;
+            }
+            
+            .vqa-quick-title {
+                width: 100%;
+                font-size: 0.875rem;
                 font-weight: 600;
                 color: var(--text-primary);
                 margin-bottom: 0.5rem;
             }
             
-            .upload-subtitle {
-                font-size: 0.875rem;
-                color: var(--text-secondary);
-            }
-            
-            .file-info {
-                background: white;
-                padding: 1.25rem;
-                border-radius: 8px;
-                display: grid;
-                gap: 0.75rem;
-            }
-            
-            .info-item {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding-bottom: 0.75rem;
-                border-bottom: 1px solid var(--border-color);
-            }
-            
-            .info-item:last-child {
-                border-bottom: none;
-                padding-bottom: 0;
-            }
-            
-            .info-label {
-                font-size: 0.875rem;
-                color: var(--text-secondary);
-            }
-            
-            .info-value {
-                font-weight: 600;
-                color: var(--text-primary);
-            }
-            
-            .data-preview {
-                background: white;
-                border-radius: 8px;
-                overflow: hidden;
-            }
-            
-            .preview-header {
-                padding: 1rem 1.25rem;
-                background: #f8f9fa;
-                border-bottom: 1px solid var(--border-color);
-            }
-            
-            .preview-title {
-                margin: 0;
-                font-size: 0.875rem;
-                font-weight: 600;
-            }
-            
-            .preview-table-wrapper {
-                max-height: 200px;
-                overflow: auto;
-            }
-            
-            .preview-table {
-                width: 100%;
-                border-collapse: collapse;
-                font-size: 0.8125rem;
-            }
-            
-            .preview-table th,
-            .preview-table td {
-                padding: 0.75rem;
-                text-align: left;
-                border-bottom: 1px solid var(--border-color);
-            }
-            
-            .preview-table th {
-                background: #f8f9fa;
-                font-weight: 600;
-                position: sticky;
-                top: 0;
-                z-index: 1;
-            }
-            
-            .quick-questions {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.5rem;
-                padding: 1rem;
-                background: white;
-                border-radius: 8px;
-            }
-            
-            .quick-questions-title {
-                width: 100%;
-                font-size: 0.875rem;
-                font-weight: 600;
-                margin-bottom: 0.25rem;
-            }
-            
-            .quick-question-btn {
+            .vqa-quick-btn {
                 padding: 0.5rem 1rem;
-                background: #f8f9fa;
+                background: var(--bg-primary);
                 border: 1px solid var(--border-color);
-                border-radius: 6px;
-                font-size: 0.8125rem;
+                border-radius: 8px;
+                font-size: 0.875rem;
                 cursor: pointer;
                 transition: all 0.2s;
             }
             
-            .quick-question-btn:hover {
+            .vqa-quick-btn:hover {
                 background: var(--primary-color);
                 color: white;
                 border-color: var(--primary-color);
             }
             
-            .table-actions {
-                display: flex;
-                gap: 0.75rem;
-                flex-wrap: wrap;
-            }
-            
-            .analysis-chat {
-                flex: 1;
-                overflow-y: auto;
-                display: flex;
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            .empty-state {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                height: 100%;
-                padding: 3rem;
-                text-align: center;
-            }
-            
-            .empty-icon {
-                font-size: 4rem;
-                margin-bottom: 1rem;
-                opacity: 0.3;
-            }
-            
-            .empty-text {
-                font-size: 0.9375rem;
-                color: var(--text-secondary);
-            }
-            
-            .chat-message {
-                display: flex;
-                gap: 0.75rem;
-                margin-bottom: 1rem;
-            }
-            
-            .message-avatar {
-                width: 36px;
-                height: 36px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 1.125rem;
-                flex-shrink: 0;
-            }
-            
-            .chat-message.user .message-avatar {
-                background: var(--primary-color);
-            }
-            
-            .chat-message.assistant .message-avatar {
-                background: #28a745;
-            }
-            
-            .message-content {
-                flex: 1;
-                padding: 1rem;
-                border-radius: 12px;
-                line-height: 1.6;
-            }
-            
-            .chat-message.user .message-content {
-                background: var(--primary-color);
-                color: white;
-            }
-            
-            .chat-message.assistant .message-content {
-                background: white;
-                border: 1px solid var(--border-color);
-            }
-            
-            .question-input-wrapper {
+            /* Input Area */
+            .vqa-input-area {
                 display: flex;
                 gap: 0.75rem;
                 align-items: flex-end;
             }
             
-            .question-input {
+            .vqa-input {
                 flex: 1;
                 padding: 0.75rem;
                 border: 2px solid var(--border-color);
@@ -383,18 +306,116 @@ export default class TableModule {
                 font-family: inherit;
                 font-size: 0.875rem;
                 resize: none;
-                line-height: 1.5;
+                transition: border-color 0.2s;
             }
             
-            .question-input:focus {
+            .vqa-input:focus {
                 outline: none;
                 border-color: var(--primary-color);
             }
             
+            /* Loading */
+            .vqa-loading {
+                display: flex;
+                gap: 1rem;
+                margin-bottom: 1.5rem;
+                opacity: 0.7;
+            }
+            
+            .vqa-loading .vqa-message-content {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            
+            /* Table Preview Card */
+            .table-preview-card {
+                background: white;
+                border-radius: 12px;
+                box-shadow: var(--shadow-md);
+                overflow: hidden;
+                margin-bottom: 1rem;
+            }
+            
+            .table-preview-header {
+                padding: 1rem 1.25rem;
+                background: var(--bg-secondary);
+                border-bottom: 1px solid var(--border-color);
+            }
+            
+            .table-preview-header h4 {
+                margin: 0;
+                font-size: 0.9375rem;
+                font-weight: 600;
+                color: var(--text-primary);
+            }
+            
+            .table-preview-stats {
+                padding: 1rem 1.25rem;
+                display: grid;
+                gap: 0.75rem;
+            }
+            
+            .stat-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding-bottom: 0.75rem;
+                border-bottom: 1px solid var(--border-color);
+            }
+            
+            .stat-item:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+            
+            .stat-label {
+                font-size: 0.875rem;
+                color: var(--text-secondary);
+            }
+            
+            .stat-value {
+                font-weight: 600;
+                color: var(--text-primary);
+                font-size: 0.875rem;
+            }
+            
+            .table-preview-content {
+                max-height: 200px;
+                overflow: auto;
+                padding: 1rem;
+                background: #f8f9fa;
+            }
+            
+            .preview-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.75rem;
+            }
+            
+            .preview-table th,
+            .preview-table td {
+                padding: 0.5rem;
+                text-align: left;
+                border-bottom: 1px solid var(--border-color);
+            }
+            
+            .preview-table th {
+                background: white;
+                font-weight: 600;
+                position: sticky;
+                top: 0;
+                z-index: 1;
+            }
+            
+            /* Responsive */
             @media (max-width: 1024px) {
-                .table-container {
+                .vqa-chat-section {
                     grid-template-columns: 1fr;
-                    height: auto;
+                }
+                
+                .vqa-image-preview {
+                    position: static;
                 }
             }
         `;
@@ -402,61 +423,93 @@ export default class TableModule {
     }
     
     attachEvents() {
-        const uploadArea = document.getElementById('uploadArea');
+        const uploadSection = document.getElementById('uploadSection');
         const fileInput = document.getElementById('fileInput');
-        const askBtn = document.getElementById('askBtn');
-        const clearBtn = document.getElementById('clearBtn');
+        const selectFileBtn = document.getElementById('selectFileBtn');
         const sampleBtn = document.getElementById('sampleBtn');
-        const questionInput = document.getElementById('questionInput');
         
-        uploadArea.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', (e) => this.handleFile(e.target.files[0]));
+        // File selection
+        selectFileBtn.addEventListener('click', () => fileInput.click());
         
-        // Drag and drop
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        });
-        
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
-        });
-        
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            const file = e.dataTransfer.files[0];
-            if (file && file.name.endsWith('.csv')) {
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
                 this.handleFile(file);
             }
         });
         
-        askBtn.addEventListener('click', () => this.askQuestionFromInput());
-        clearBtn.addEventListener('click', () => this.clearAll());
+        // Sample button
         sampleBtn.addEventListener('click', () => this.loadSample());
         
-        questionInput.addEventListener('input', (e) => {
-            askBtn.disabled = !e.target.value.trim();
+        // Drag and drop
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
         });
         
-        questionInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                if (questionInput.value.trim()) {
-                    this.askQuestionFromInput();
-                }
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+        
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            
+            const file = e.dataTransfer.files[0];
+            if (file && (file.name.endsWith('.csv') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+                this.handleFile(file);
             }
         });
     }
     
+    attachChatEvents() {
+        const askBtn = document.getElementById('askBtn');
+        const questionInput = document.getElementById('questionInput');
+        const newTableBtn = document.getElementById('newTableBtn');
+        const quickBtns = document.querySelectorAll('.vqa-quick-btn');
+        
+        // Ask button
+        askBtn.addEventListener('click', () => this.askQuestion());
+        
+        // Enter key to send
+        questionInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.askQuestion();
+            }
+        });
+        
+        // Quick questions
+        quickBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const question = e.currentTarget.dataset.question;
+                questionInput.value = question;
+                this.askQuestion();
+            });
+        });
+        
+        // New table button
+        newTableBtn.addEventListener('click', () => this.resetSession());
+    }
+    
     async handleFile(file) {
-        if (!file) return;
+        const uploadSection = document.getElementById('uploadSection');
         
         try {
+            // Show loading
+            uploadSection.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Tablo yükleniyor ve işleniyor...</p>
+                    <small style="color: var(--text-secondary);">Bu işlem birkaç saniye sürebilir</small>
+                </div>
+            `;
+            
+            // Parse CSV
             const text = await file.text();
             this.csvData = this.parseCSV(text);
             
-            // CSV verisini Dict listesine çevir (header + rows)
+            // CSV verisini Dict listesine çevir
             const headers = this.csvData[0];
             const rows = this.csvData.slice(1);
             const tableData = rows.map(row => {
@@ -470,32 +523,21 @@ export default class TableModule {
             // Session oluştur
             await this.createSession(tableData);
             
-            // Update file info
-            document.getElementById('fileInfo').style.display = 'block';
-            document.getElementById('fileName').textContent = file.name;
-            document.getElementById('rowCount').textContent = this.csvData.length;
-            document.getElementById('columnCount').textContent = this.csvData[0].length;
-            
-            // Show preview
-            this.showPreview();
-            
-            // Show quick questions and question input
-            document.getElementById('quickQuestions').style.display = 'flex';
-            document.getElementById('questionInputWrapper').style.display = 'flex';
-            document.getElementById('emptyState').style.display = 'none';
-            
-            // Attach quick question events
-            document.querySelectorAll('.quick-question-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const question = e.currentTarget.dataset.question;
-                    document.getElementById('questionInput').value = question;
-                    document.getElementById('askBtn').disabled = false;
-                });
-            });
+            // Show chat interface
+            this.showChatInterface(file);
             
         } catch (error) {
             console.error('File processing error:', error);
-            alert('Dosya işlenirken bir hata oluştu: ' + error.message);
+            uploadSection.innerHTML = `
+                <div class="error-message">
+                    <strong>⚠️ Yükleme Hatası</strong>
+                    <p>${error.message}</p>
+                    <button class="btn btn-primary" onclick="location.reload()">
+                        <span>🔄</span>
+                        <span>Tekrar Dene</span>
+                    </button>
+                </div>
+            `;
         }
     }
     
@@ -506,114 +548,50 @@ export default class TableModule {
         });
     }
     
-    showPreview() {
-        const preview = document.getElementById('dataPreview');
-        const table = document.getElementById('previewTable');
+    showChatInterface(file) {
+        const uploadSection = document.getElementById('uploadSection');
+        const chatSection = document.getElementById('chatSection');
         
-        preview.style.display = 'block';
+        // Hide upload, show chat
+        uploadSection.style.display = 'none';
+        chatSection.style.display = 'grid';
         
+        // Update file info
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('rowCount').textContent = this.csvData.length - 1;
+        document.getElementById('columnCount').textContent = this.csvData[0].length;
+        
+        // Show table preview
+        this.showTablePreview();
+        
+        // Attach chat events
+        this.attachChatEvents();
+    }
+    
+    showTablePreview() {
+        const previewContent = document.getElementById('tablePreviewContent');
         const previewData = this.csvData.slice(0, 6);
         
-        table.innerHTML = `
-            <thead>
-                <tr>
-                    ${previewData[0].map(cell => `<th>${this.escapeHtml(cell)}</th>`).join('')}
-                </tr>
-            </thead>
-            <tbody>
-                ${previewData.slice(1).map(row => `
+        const tableHtml = `
+            <table class="preview-table">
+                <thead>
                     <tr>
-                        ${row.map(cell => `<td>${this.escapeHtml(cell)}</td>`).join('')}
+                        ${previewData[0].map(cell => `<th>${this.escapeHtml(cell)}</th>`).join('')}
                     </tr>
-                `).join('')}
-            </tbody>
-        `;
-    }
-    
-    async askQuestionFromInput() {
-        const questionInput = document.getElementById('questionInput');
-        const askBtn = document.getElementById('askBtn');
-        const question = questionInput.value.trim();
-        
-        if (!this.sessionId || !question) return;
-        
-        // Clear input and disable button
-        questionInput.value = '';
-        askBtn.disabled = true;
-        
-        // Ask question using session
-        await this.askQuestion(question);
-        
-        // Re-enable button
-        askBtn.disabled = false;
-    }
-    
-    addMessage(role, content) {
-        const chat = document.getElementById('analysisChat');
-        const messageId = `msg-${Date.now()}`;
-        
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `chat-message ${role}`;
-        messageDiv.id = messageId;
-        messageDiv.innerHTML = `
-            <div class="message-avatar">${role === 'user' ? '👤' : '🤖'}</div>
-            <div class="message-content">${this.formatMessage(content)}</div>
+                </thead>
+                <tbody>
+                    ${previewData.slice(1).map(row => `
+                        <tr>
+                            ${row.map(cell => `<td>${this.escapeHtml(cell)}</td>`).join('')}
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
         `;
         
-        chat.appendChild(messageDiv);
-        chat.scrollTop = chat.scrollHeight;
-        
-        return messageId;
+        previewContent.innerHTML = tableHtml;
     }
     
-    removeMessage(messageId) {
-        const message = document.getElementById(messageId);
-        if (message) {
-            message.remove();
-        }
-    }
-    
-    formatMessage(text) {
-        let formatted = this.escapeHtml(text);
-        
-        // Bold text
-        formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-        
-        // Line breaks
-        formatted = formatted.replace(/\n/g, '<br>');
-        
-        return formatted;
-    }
-    
-    async clearAll() {
-        // Clear session
-        await this.clearSession();
-        
-        // Clear UI
-        this.csvData = null;
-        document.getElementById('fileInput').value = '';
-        document.getElementById('fileInfo').style.display = 'none';
-        document.getElementById('dataPreview').style.display = 'none';
-        document.getElementById('quickQuestions').style.display = 'none';
-        document.getElementById('questionInputWrapper').style.display = 'none';
-        document.getElementById('emptyState').style.display = 'flex';
-        document.getElementById('analysisChat').innerHTML = '<div class="empty-state" id="emptyState"><div class="empty-icon">📋</div><div class="empty-text">CSV dosyası yükleyin ve sorularınızı sorun</div></div>';
-    }
-    
-    loadSample() {
-        const sampleCSV = `Urun,Ocak,Subat,Mart,Nisan,Mayis
-Laptop,45,52,48,55,61
-Mouse,120,115,130,125,140
-Klavye,85,90,88,95,102
-Monitor,35,38,42,40,45
-Kulaklik,65,70,68,75,80`;
-        
-        const blob = new Blob([sampleCSV], { type: 'text/csv' });
-        const file = new File([blob], 'ornek_satis.csv', { type: 'text/csv' });
-        this.handleFile(file);
-    }
-    
-    // Session yönetimi
     async createSession(tableData) {
         try {
             const response = await fetch(`${this.apiUrl}/create-session`, {
@@ -642,16 +620,38 @@ Kulaklik,65,70,68,75,80`;
         }
     }
     
-    async askQuestion(question) {
-        if (!this.sessionId || !question) return;
+    async askQuestion() {
+        const questionInput = document.getElementById('questionInput');
+        const question = questionInput.value.trim();
+        
+        if (!question) {
+            alert('Lütfen bir soru yazın');
+            return;
+        }
+        
+        if (!this.sessionId) {
+            alert('Oturum bulunamadı. Lütfen tabloyu tekrar yükleyin.');
+            return;
+        }
+        
+        const chatMessages = document.getElementById('chatMessages');
+        const quickQuestions = document.getElementById('quickQuestions');
+        
+        // Hide quick questions after first use
+        if (quickQuestions) {
+            quickQuestions.style.display = 'none';
+        }
         
         // Add user message
-        this.addMessage('user', question);
+        this.addUserMessage(question);
+        questionInput.value = '';
+        
+        // Add loading indicator
+        const loadingId = 'loading-' + Date.now();
+        this.addLoadingMessage(loadingId);
         
         try {
-            // Show loading message
-            const loadingId = this.addMessage('assistant', 'Analiz ediliyor...');
-            
+            // Make API request
             const response = await fetch(`${this.apiUrl}/ask-question`, {
                 method: 'POST',
                 headers: {
@@ -669,83 +669,124 @@ Kulaklik,65,70,68,75,80`;
             
             const data = await response.json();
             
-            // Remove loading message and add real response
-            this.removeMessage(loadingId);
-            this.addMessage('assistant', data.answer);
-            
-            // Add to chat history
-            this.chatHistory.push({
-                question: question,
-                answer: data.answer,
-                timestamp: new Date().toISOString()
-            });
+            // Remove loading, add answer
+            this.removeLoadingMessage(loadingId);
+            this.addAssistantMessage(data.answer);
             
         } catch (error) {
             console.error('Question error:', error);
-            this.addMessage('assistant', '❌ Analiz sırasında bir hata oluştu: ' + error.message);
+            this.removeLoadingMessage(loadingId);
+            this.addAssistantMessage('Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.');
         }
     }
     
-    async loadSessionHistory() {
-        if (!this.sessionId) return;
-        
-        try {
-            const response = await fetch(`${this.apiUrl}/session-history?session_id=${this.sessionId}`);
-            
-            if (!response.ok) {
-                throw new Error(`API error: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            this.chatHistory = data.questions || [];
-            
-            // Restore chat history
-            this.restoreChatHistory();
-            
-        } catch (error) {
-            console.error('History load error:', error);
+    addUserMessage(message) {
+        const chatMessages = document.getElementById('chatMessages');
+        const messageEl = document.createElement('div');
+        messageEl.className = 'vqa-user-message';
+        messageEl.innerHTML = `
+            <div class="vqa-user-avatar">👤</div>
+            <div class="vqa-message-content">
+                <strong>Siz</strong>
+                <p>${this.escapeHtml(message)}</p>
+            </div>
+        `;
+        chatMessages.appendChild(messageEl);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    addAssistantMessage(message) {
+        const chatMessages = document.getElementById('chatMessages');
+        const messageEl = document.createElement('div');
+        messageEl.className = 'vqa-assistant-message';
+        messageEl.innerHTML = `
+            <div class="vqa-assistant-avatar">🤖</div>
+            <div class="vqa-message-content">
+                <strong>Yapay Zeka Asistan</strong>
+                <div class="vqa-formatted-text">${this.formatMessage(message)}</div>
+            </div>
+        `;
+        chatMessages.appendChild(messageEl);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    addLoadingMessage(id) {
+        const chatMessages = document.getElementById('chatMessages');
+        const messageEl = document.createElement('div');
+        messageEl.id = id;
+        messageEl.className = 'vqa-loading vqa-assistant-message';
+        messageEl.innerHTML = `
+            <div class="vqa-assistant-avatar">🤖</div>
+            <div class="vqa-message-content">
+                <div class="spinner" style="width: 20px; height: 20px; border-width: 2px; margin-right: 0.5rem;"></div>
+                <span>Cevap hazırlanıyor...</span>
+            </div>
+        `;
+        chatMessages.appendChild(messageEl);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    removeLoadingMessage(id) {
+        const loadingEl = document.getElementById(id);
+        if (loadingEl) {
+            loadingEl.remove();
         }
     }
     
-    restoreChatHistory() {
-        const chat = document.getElementById('analysisChat');
-        const emptyState = document.getElementById('emptyState');
-        
-        if (this.chatHistory.length > 0) {
-            emptyState.style.display = 'none';
-            
-            this.chatHistory.forEach(item => {
-                this.addMessage('user', item.question);
-                this.addMessage('assistant', item.answer);
-            });
-        }
-    }
-    
-    async clearSession() {
-        if (this.sessionId) {
-            try {
-                await fetch(`${this.apiUrl}/clear-session`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        session_id: this.sessionId
-                    })
-                });
-            } catch (error) {
-                console.error('Clear session error:', error);
-            }
-        }
-        
+    resetSession() {
         this.sessionId = null;
         this.chatHistory = [];
+        this.csvData = null;
+        
+        document.getElementById('chatSection').style.display = 'none';
+        document.getElementById('uploadSection').style.display = 'block';
+        document.getElementById('fileInput').value = '';
+        
+        // Re-render to reset everything
+        this.render();
+        this.attachEvents();
     }
-
+    
+    loadSample() {
+        const sampleCSV = `Urun,Ocak,Subat,Mart,Nisan,Mayis
+Laptop,45,52,48,55,61
+Mouse,120,115,130,125,140
+Klavye,85,90,88,95,102
+Monitor,35,38,42,40,45
+Kulaklik,65,70,68,75,80`;
+        
+        const blob = new Blob([sampleCSV], { type: 'text/csv' });
+        const file = new File([blob], 'ornek_satis.csv', { type: 'text/csv' });
+        this.handleFile(file);
+    }
+    
     escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
+    
+    formatMessage(text) {
+        // Escape HTML first
+        let formatted = this.escapeHtml(text);
+        
+        // Bold text: **text** or __text__
+        formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        formatted = formatted.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+        
+        // Italic text: *text* or _text_
+        formatted = formatted.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        formatted = formatted.replace(/_([^_]+)_/g, '<em>$1</em>');
+        
+        // Double newline to paragraph break
+        formatted = formatted.replace(/\n\n+/g, '</p><p>');
+        
+        // Single newline to br
+        formatted = formatted.replace(/\n/g, '<br>');
+        
+        // Wrap in paragraph
+        formatted = '<p>' + formatted + '</p>';
+        
+        return formatted;
+    }
 }
-

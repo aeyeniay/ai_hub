@@ -97,6 +97,21 @@ def upload_image():
         image_bytes = image_file.read()
         image = Image.open(io.BytesIO(image_bytes))
         
+        # PNG RGBA modunu RGB'ye çevir (JPEG için gerekli)
+        if image.mode in ('RGBA', 'LA', 'P'):
+            # Beyaz arka plan oluştur
+            background = Image.new('RGB', image.size, (255, 255, 255))
+            # Alpha varsa kullan, yoksa direkt yapıştır
+            if image.mode == 'P':
+                image = image.convert('RGBA')
+            if 'A' in image.mode:
+                background.paste(image, mask=image.split()[-1])  # Alpha kanalını mask olarak kullan
+            else:
+                background.paste(image)
+            image = background
+        elif image.mode != 'RGB':
+            image = image.convert('RGB')
+        
         # Görseli JPEG formatında base64'e çevir (daha küçük)
         img_buffer = io.BytesIO()
         image.save(img_buffer, format='JPEG', quality=85, optimize=True)

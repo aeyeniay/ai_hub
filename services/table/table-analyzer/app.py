@@ -159,23 +159,45 @@ TURKISH_VOCABULARY = {
     }
 }
 
-def call_ollama_for_analysis(table_data: List[Dict], language: str, question: str = ""):
-    """Ollama LLM'den tablo analizi al"""
+def call_ollama_for_analysis(table_data: List[Dict], language: str, question: str = "", conversation_history: List[Dict] = None):
+    """Ollama LLM'den tablo analizi al - Sohbet geçmişi ile"""
     try:
         # Tabloyu string'e çevir
         table_str = json.dumps(table_data, ensure_ascii=False, indent=2)
         
-        # Eğer question varsa, basit soru-cevap yap
+        # Eğer question varsa, basit soru-cevap yap (sohbet geçmişi ile)
         if question:
+            # Sohbet geçmişini prompt'a ekle
+            history_context = ""
+            if conversation_history:
+                history_context = "\n\nÖnceki Sohbet Geçmişi:\n"
+                for item in conversation_history[-5:]:  # Son 5 sohbeti ekle
+                    history_context += f"Kullanıcı: {item['question']}\n"
+                    history_context += f"Asistan: {item['answer']}\n\n"
+            
             prompt = f"""
-            Aşağıdaki tablo verilerine dayanarak soruyu cevapla.
+            Sen bir tablo analiz asistanısın. Sadece verilen tablo hakkında sorulara cevap verirsin.
             
             Tablo:
             {table_str}
+            {history_context}
+            Şimdiki Soru: {question}
             
-            Soru: {question}
+            ÖNEMLİ KURALLAR:
             
-            Kısa ve net cevap ver. Sadece cevabı yaz, başka açıklama ekleme.
+            1. SORU KONTROLÜ:
+            - Eğer soru tablo verisiyle ALAKASIZ ise (örn: "Hava nasıl?", "Saat kaç?", "Türkiye'nin başkenti neresi?", genel sohbet, hayatla ilgili sorular vb.)
+            - Şu şekilde kibarca reddet: "Üzgünüm, ben sadece yüklenen tablo verilerini analiz edebiliyorum. Lütfen tablo ile ilgili bir soru sorun. Örneğin: toplam değerler, ortalamalar, trendler, karşılaştırmalar gibi."
+            
+            2. SORU TABLO İLE İLGİLİ İSE:
+            - Eğer kullanıcı "bunları listeler misin", "onları göster", "eşsiz değerleri listele" gibi önceki soruya atıfta bulunuyorsa, önceki sohbet geçmişindeki bağlamı kullan
+            - Kullanıcı "bunlar", "onlar", "bu değerler" gibi gönderim sözcükleri kullanıyorsa, önceki cevabınıza veya soruya bak
+            - Tutarlı ve bağlamsal cevap ver
+            - Kısa ve net cevap ver. Sadece cevabı yaz, başka açıklama ekleme.
+            
+            3. TABLO ODAKLI KAL:
+            - Sadece tablodaki verilere dayanarak cevap ver
+            - Tabloda olmayan bilgiler hakkında tahmin yapma veya genel bilgi verme
             """
         else:
             # Detaylı analiz prompt'u oluştur
@@ -473,7 +495,7 @@ async def create_session_endpoint(request: SessionCreateRequest):
 
 @app.post("/ask-question", response_model=SessionQuestionResponse)
 async def ask_question(request: SessionQuestionRequest):
-    """Session'daki tablo hakkında soru sor"""
+    """Session'daki tablo hakkında soru sor - Sohbet geçmişi ile context"""
     try:
         if not request.session_id or not request.question:
             raise HTTPException(status_code=400, detail="Session ID ve soru gerekli")
@@ -487,9 +509,12 @@ async def ask_question(request: SessionQuestionRequest):
         if not table_data:
             raise HTTPException(status_code=400, detail="Session'da tablo verisi yok")
         
-        # LLM'den cevap al
+        # Önceki sohbet geçmişini al
+        conversation_history = session_data.get("questions", [])
+        
+        # LLM'den cevap al (sohbet geçmişi ile)
         start_time = time.time()
-        answer = call_ollama_for_analysis(table_data, "turkish", request.question)
+        answer = call_ollama_for_analysis(table_data, "turkish", request.question, conversation_history)
         processing_time = time.time() - start_time
         
         # Session'a soru-cevap ekle
